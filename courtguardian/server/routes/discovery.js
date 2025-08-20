@@ -444,7 +444,7 @@ router.patch('/admin/suggestions/:id', authenticateToken, requireModerator, asyn
       parseInt(id),
       status,
       adminNotes,
-      req.moderator.id
+      req.user.id
     );
 
     // If approved and createCourt is true, create the actual court
