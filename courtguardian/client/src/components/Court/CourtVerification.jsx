@@ -54,7 +54,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
     setSubmitting(true);
 
     try {
-      const response = await fetch('${API_BASE_URL}/verifications/submit', {
+      const response = await fetch(`${API_BASE_URL}/verifications/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

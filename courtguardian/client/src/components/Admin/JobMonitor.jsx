@@ -17,7 +17,7 @@ export default function JobMonitor() {
   const fetchJobStatus = async () => {
     try {
       const token = getToken();
-      const response = await fetch('${API_BASE_URL}/admin/jobs/status', {
+      const response = await fetch(`${API_BASE_URL}/admin/jobs/status`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -35,7 +35,7 @@ export default function JobMonitor() {
   const fetchRecentJobs = async () => {
     try {
       const token = getToken();
-      const response = await fetch('${API_BASE_URL}/admin/jobs/recent', {
+      const response = await fetch(`${API_BASE_URL}/admin/jobs/recent`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -53,7 +53,7 @@ export default function JobMonitor() {
   const triggerDiscoveryJob = async () => {
     try {
       const token = getToken();
-      const response = await fetch('${API_BASE_URL}/admin/jobs/trigger-discovery', {
+      const response = await fetch(`${API_BASE_URL}/admin/jobs/trigger-discovery`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

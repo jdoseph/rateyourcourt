@@ -59,10 +59,13 @@ export default function AvatarColorPicker({ user, onColorChange, disabled = fals
     }));
   };
 
-  const handleSave = () => {
-    onColorChange(tempColors);
+  const handleSave = async () => {
     setIsOpen(false);
     setShowCustomSection(false);
+    // Small delay to ensure modal closes before showing success message
+    setTimeout(() => {
+      onColorChange(tempColors);
+    }, 100);
   };
 
   const handleCancel = () => {

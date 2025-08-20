@@ -59,7 +59,7 @@ export default function AdminPanel({ user }) {
     setLoading(true);
     try {
       const token = getToken();
-      const response = await fetch('${API_BASE_URL}/discovery/admin/suggestions?status=pending', {
+      const response = await fetch(`${API_BASE_URL}/discovery/admin/suggestions?status=pending`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -116,7 +116,7 @@ export default function AdminPanel({ user }) {
   // Geocode address to get coordinates
   const geocodeAddress = async (addressToGeocode) => {
     try {
-      const response = await fetch('${API_BASE_URL}/discovery/geocode', {
+      const response = await fetch(`${API_BASE_URL}/discovery/geocode`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -162,7 +162,7 @@ export default function AdminPanel({ user }) {
         
         // Reverse geocode to get address
         try {
-          const response = await fetch('${API_BASE_URL}/discovery/reverse-geocode', {
+          const response = await fetch(`${API_BASE_URL}/discovery/reverse-geocode`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -215,7 +215,7 @@ export default function AdminPanel({ user }) {
       }
 
       const token = getToken();
-      const response = await fetch('${API_BASE_URL}/discovery/admin/discover', {
+      const response = await fetch(`${API_BASE_URL}/discovery/admin/discover`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +272,7 @@ export default function AdminPanel({ user }) {
   // Fetch verification statistics
   const fetchVerificationStats = async () => {
     try {
-      const response = await fetch('${API_BASE_URL}/verifications/stats');
+      const response = await fetch(`${API_BASE_URL}/verifications/stats');
       if (response.ok) {
         const data = await response.json();
         setVerificationStats({
@@ -291,7 +291,7 @@ export default function AdminPanel({ user }) {
     setLoading(true);
     try {
       const token = getToken();
-      const response = await fetch('${API_BASE_URL}/verifications/admin/pending', {
+      const response = await fetch(`${API_BASE_URL}/verifications/admin/pending`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
