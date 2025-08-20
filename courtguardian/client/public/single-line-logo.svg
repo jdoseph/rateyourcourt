@@ -1,0 +1,10 @@
+<svg width="250" height="50" viewBox="0 0 250 50" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(10, 10)">
+    <rect x="0" y="0" width="30" height="30" rx="3" fill="none" stroke="#3498db" stroke-width="2"/>
+    <line x1="15" y1="0" x2="15" y2="30" stroke="#3498db" stroke-width="1.5"/>
+    <line x1="0" y1="15" x2="30" y2="15" stroke="#3498db" stroke-width="1.5"/>
+    <circle cx="15" cy="15" r="4" fill="none" stroke="#3498db" stroke-width="1.5"/>
+    <circle cx="15" cy="15" r="1.5" fill="#3498db"/>
+  </g>
+  <text x="55" y="32" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#2c3e50">Rate Your <tspan fill="#3498db">Court</tspan></text>
+</svg>
