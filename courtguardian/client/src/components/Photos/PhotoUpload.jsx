@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { getToken } from '../../api';
+import { API_BASE_URL } from '../../constants';
 
 export default function PhotoUpload({ courtId, onUploadSuccess, onUploadError }) {
   const [uploading, setUploading] = useState(false);

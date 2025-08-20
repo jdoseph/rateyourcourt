@@ -1,6 +1,7 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { saveToken, getUserProfile } from '../../api';
+import { API_BASE_URL } from '../../constants';
 
 export default function GoogleSignIn({ onLogin, onError }) {
   const handleGoogleSuccess = async (credentialResponse) => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getToken } from '../../api';
+import { API_BASE_URL } from '../../constants';
 
 export default function JobMonitor() {
   const [jobStatus, setJobStatus] = useState(null);

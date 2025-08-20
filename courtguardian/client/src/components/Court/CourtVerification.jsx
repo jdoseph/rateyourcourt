@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getToken } from '../../api';
+import { API_BASE_URL } from '../../constants';
 
 export default function CourtVerification({ courtId, court, onVerificationSubmitted, onShowToast }) {
   const [verificationData, setVerificationData] = useState(null);

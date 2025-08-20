@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { ALLOWED_SPORTS } from '../../constants';
+import { ALLOWED_SPORTS, API_BASE_URL } from '../../constants';
 import Toast from '../Toast/Toast';
 import { getUserProfile, getToken } from '../../api';
 import '../../App.css';
