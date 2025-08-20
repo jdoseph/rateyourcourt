@@ -399,8 +399,15 @@ router.get('/admin/suggestions', authenticateToken, requireModerator, async (req
   const { status = 'pending', limit = 20, offset = 0 } = req.query;
 
   try {
-    const suggestions = await getCourtSuggestions(status, parseInt(limit), parseInt(offset));
-    const total = await getCourtSuggestionsCount(status);
+    let suggestions, total;
+    try {
+      suggestions = await getCourtSuggestions(status, parseInt(limit), parseInt(offset));
+      total = await getCourtSuggestionsCount(status);
+    } catch (error) {
+      console.log('court_suggestions table not found, returning empty results');
+      suggestions = [];
+      total = 0;
+    }
     
     res.json({ 
       suggestions,

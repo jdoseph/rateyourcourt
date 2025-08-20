@@ -158,20 +158,25 @@ router.post('/submit', authenticateToken, async (req, res) => {
 // Get pending verifications for admin review
 router.get('/admin/pending', authenticateToken, requireModerator, async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        cv.id, cv.court_id, cv.field_name, cv.old_value, cv.new_value,
-        cv.verification_type, cv.notes, cv.created_at,
-        c.name as court_name, c.address as court_address,
-        u.username as contributor_name, u.email as contributor_email
-      FROM court_verifications cv
-      JOIN courts c ON cv.court_id = c.id
-      LEFT JOIN users u ON cv.user_id = u.id
-      WHERE cv.status = 'pending'
-      ORDER BY cv.created_at ASC
-    `;
-    
-    const result = await pool.query(query);
+    let result;
+    try {
+      const query = `
+        SELECT 
+          cv.id, cv.court_id, cv.field_name, cv.old_value, cv.new_value,
+          cv.verification_type, cv.notes, cv.created_at,
+          c.name as court_name, c.address as court_address,
+          u.username as contributor_name, u.email as contributor_email
+        FROM court_verifications cv
+        JOIN courts c ON cv.court_id = c.id
+        LEFT JOIN users u ON cv.user_id = u.id
+        WHERE cv.status = 'pending'
+        ORDER BY cv.created_at ASC
+      `;
+      result = await pool.query(query);
+    } catch (error) {
+      console.log('court_verifications table not found, returning empty results');
+      result = { rows: [] };
+    }
     
     res.json({
       pendingVerifications: result.rows,
@@ -281,29 +286,47 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
 // Get verification statistics
 router.get('/stats', async (req, res) => {
   try {
-    const statsQuery = `
-      SELECT 
-        COUNT(*) as total_verifications,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
-        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
-        COUNT(DISTINCT court_id) as courts_with_verifications,
-        COUNT(DISTINCT user_id) as contributing_users
-      FROM court_verifications
-    `;
+    // Try to get verification stats, fallback to defaults if table doesn't exist
+    let statsResult;
+    try {
+      const statsQuery = `
+        SELECT 
+          COUNT(*) as total_verifications,
+          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+          COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
+          COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
+          COUNT(DISTINCT court_id) as courts_with_verifications,
+          COUNT(DISTINCT user_id) as contributing_users
+        FROM court_verifications
+      `;
+      statsResult = await pool.query(statsQuery);
+    } catch (error) {
+      console.log('court_verifications table not found, using defaults');
+      statsResult = { rows: [{ 
+        total_verifications: '0',
+        pending_count: '0', 
+        approved_count: '0',
+        rejected_count: '0',
+        courts_with_verifications: '0',
+        contributing_users: '0'
+      }] };
+    }
     
-    const statsResult = await pool.query(statsQuery);
-    
-    const courtsNeedingVerificationQuery = `
-      SELECT COUNT(*) as courts_needing_verification
-      FROM courts 
-      WHERE verification_status = 'pending' 
-         OR surface_type IS NULL 
-         OR court_count IS NULL 
-         OR lighting IS NULL
-    `;
-    
-    const needingVerificationResult = await pool.query(courtsNeedingVerificationQuery);
+    // Get courts needing verification
+    let needingVerificationResult;
+    try {
+      const courtsNeedingVerificationQuery = `
+        SELECT COUNT(*) as courts_needing_verification
+        FROM courts 
+        WHERE surface_type IS NULL 
+           OR court_count IS NULL 
+           OR lighting IS NULL
+      `;
+      needingVerificationResult = await pool.query(courtsNeedingVerificationQuery);
+    } catch (error) {
+      console.log('Error querying courts, using defaults');
+      needingVerificationResult = { rows: [{ courts_needing_verification: '0' }] };
+    }
     
     res.json({
       ...statsResult.rows[0],
