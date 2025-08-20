@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { ALLOWED_SPORTS } from '../../constants';
+import { ALLOWED_SPORTS, API_BASE_URL } from '../../constants';
 import Fuse from 'fuse.js';
 
 function highlightMatch(text, query) {
@@ -333,7 +333,7 @@ export default function SearchResults() {
       try {
         // If we have location parameters, use the location-based search
         if (lat && lng) {
-          const searchUrl = `http://localhost:5001/api/courts/search?latitude=${lat}&longitude=${lng}&radius=50000${sport && sport !== 'All Sports' ? `&sportType=${encodeURIComponent(sport)}` : ''}`;
+          const searchUrl = `${API_BASE_URL}/courts/search?latitude=${lat}&longitude=${lng}&radius=50000${sport && sport !== 'All Sports' ? `&sportType=${encodeURIComponent(sport)}` : ''}`;
           const res = await fetch(searchUrl);
           if (!res.ok) throw new Error('Failed to fetch courts');
           const data = await res.json();
@@ -341,8 +341,8 @@ export default function SearchResults() {
         } else {
           // Otherwise, fetch all courts and filter by sport if specified
           const courtUrl = sport && sport !== 'All Sports' 
-            ? `http://localhost:5001/api/courts?sport_type=${encodeURIComponent(sport)}`
-            : 'http://localhost:5001/api/courts';
+            ? `${API_BASE_URL}/courts?sport_type=${encodeURIComponent(sport)}`
+            : '${API_BASE_URL}/courts';
           const res = await fetch(courtUrl);
           if (!res.ok) throw new Error('Failed to fetch courts');
           const data = await res.json();

@@ -76,7 +76,7 @@ export default function CourtSearchDiscovery({ onCourtsDiscovered }) {
   // Geocode address to get coordinates
   const geocodeAddress = async (addressToGeocode) => {
     try {
-      const response = await fetch('http://localhost:5001/api/discovery/geocode', {
+      const response = await fetch('${API_BASE_URL}/discovery/geocode', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -122,7 +122,7 @@ export default function CourtSearchDiscovery({ onCourtsDiscovered }) {
         
         // Reverse geocode to get address
         try {
-          const response = await fetch('http://localhost:5001/api/discovery/reverse-geocode', {
+          const response = await fetch('${API_BASE_URL}/discovery/reverse-geocode', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -183,7 +183,7 @@ export default function CourtSearchDiscovery({ onCourtsDiscovered }) {
         ...(searchTerm && { searchTerm })
       });
 
-      const response = await fetch(`http://localhost:5001/api/courts/search?${params}`);
+      const response = await fetch(`${API_BASE_URL}/courts/search?${params}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -241,7 +241,7 @@ export default function CourtSearchDiscovery({ onCourtsDiscovered }) {
       }
 
       const token = getToken();
-      const response = await fetch('http://localhost:5001/api/discovery/admin/discover', {
+      const response = await fetch('${API_BASE_URL}/discovery/admin/discover', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -311,7 +311,7 @@ export default function CourtSearchDiscovery({ onCourtsDiscovered }) {
 
     try {
       const token = getToken();
-      const response = await fetch('http://localhost:5001/api/courts/suggest', {
+      const response = await fetch('${API_BASE_URL}/courts/suggest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

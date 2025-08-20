@@ -6,7 +6,7 @@ export default function GoogleSignIn({ onLogin, onError }) {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       // Send the Google credential to our backend
-      const response = await fetch('http://localhost:5001/api/auth/google', {
+      const response = await fetch('${API_BASE_URL}/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

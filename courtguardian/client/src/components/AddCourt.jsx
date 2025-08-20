@@ -35,7 +35,7 @@ export default function AddCourt({ onSuccess, defaultSport }) {
 
     try {
       const token = getToken();
-      const res = await fetch('http://localhost:5001/api/courts', {
+      const res = await fetch('${API_BASE_URL}/courts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

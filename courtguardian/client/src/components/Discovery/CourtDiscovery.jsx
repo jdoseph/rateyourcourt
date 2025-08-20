@@ -54,7 +54,7 @@ export default function CourtDiscovery({ onCourtsDiscovered }) {
     setShowAllCourts(false);
 
     try {
-      const response = await fetch('http://localhost:5001/api/discovery/discover', {
+      const response = await fetch('${API_BASE_URL}/discovery/discover', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

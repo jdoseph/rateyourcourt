@@ -53,7 +53,7 @@ export default function CourtDetails({ courtId, user }) {
   useEffect(() => {
     async function fetchCourt() {
       try {
-        const res = await fetch(`http://localhost:5001/api/courts/${courtId}`);
+        const res = await fetch(`${API_BASE_URL}/courts/${courtId}`);
         if (!res.ok) {
           const errorText = await res.text();
           console.error('Court API error response:', errorText);
@@ -81,7 +81,7 @@ export default function CourtDetails({ courtId, user }) {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const res = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews`, {
+        const res = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews`, {
           headers
         });
         if (!res.ok) throw new Error('Failed to fetch reviews');
@@ -110,7 +110,7 @@ export default function CourtDetails({ courtId, user }) {
 
     async function fetchPhotosInternal() {
       try {
-        const res = await fetch(`http://localhost:5001/api/courts/${courtId}/photos`);
+        const res = await fetch(`${API_BASE_URL}/courts/${courtId}/photos`);
         if (!res.ok) throw new Error('Failed to fetch photos');
         const data = await res.json();
         setPhotos(data);
@@ -141,7 +141,7 @@ export default function CourtDetails({ courtId, user }) {
 
     try {
       // First submit the review
-      const reviewRes = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews`, {
+      const reviewRes = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ export default function CourtDetails({ courtId, user }) {
         });
         formData.append('reviewId', reviewData.id);
 
-        const photoRes = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews/${reviewData.id}/photos`, {
+        const photoRes = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews/${reviewData.id}/photos`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -191,7 +191,7 @@ export default function CourtDetails({ courtId, user }) {
         refreshHeaders['Authorization'] = `Bearer ${token}`;
       }
       
-      const refreshed = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews`, {
+      const refreshed = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews`, {
         headers: refreshHeaders
       });
       const refreshedData = await refreshed.json();
@@ -344,7 +344,7 @@ export default function CourtDetails({ courtId, user }) {
   // Function to refresh photos (can be called externally)
   const fetchPhotos = async () => {
     try {
-      const res = await fetch(`http://localhost:5001/api/courts/${courtId}/photos`);
+      const res = await fetch(`${API_BASE_URL}/courts/${courtId}/photos`);
       if (!res.ok) throw new Error('Failed to fetch photos');
       const data = await res.json();
       setPhotos(data);
@@ -365,7 +365,7 @@ export default function CourtDetails({ courtId, user }) {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const res = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews`, {
+      const res = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews`, {
         headers
       });
       if (!res.ok) throw new Error('Failed to fetch reviews');
@@ -405,7 +405,7 @@ export default function CourtDetails({ courtId, user }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews/${reviewId}`, {
+      const res = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews/${reviewId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -429,7 +429,7 @@ export default function CourtDetails({ courtId, user }) {
         });
         formData.append('reviewId', reviewData.id);
 
-        const photoRes = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews/${reviewData.id}/photos`, {
+        const photoRes = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews/${reviewData.id}/photos`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -473,7 +473,7 @@ export default function CourtDetails({ courtId, user }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews/${reviewId}`, {
+      const res = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews/${reviewId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -513,7 +513,7 @@ export default function CourtDetails({ courtId, user }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5001/api/courts/${courtId}/reviews/${reviewId}/photos/${photoId}`, {
+      const res = await fetch(`${API_BASE_URL}/courts/${courtId}/reviews/${reviewId}/photos/${photoId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -712,7 +712,7 @@ export default function CourtDetails({ courtId, user }) {
           onVerificationSubmitted={() => {
             // Refresh court data when verification is submitted
             setLoadingCourt(true);
-            fetch(`http://localhost:5001/api/courts/${courtId}`)
+            fetch(`${API_BASE_URL}/courts/${courtId}`)
               .then(res => res.json())
               .then(data => setCourt(data))
               .finally(() => setLoadingCourt(false));

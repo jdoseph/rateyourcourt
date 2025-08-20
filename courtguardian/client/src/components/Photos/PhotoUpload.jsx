@@ -33,7 +33,7 @@ export default function PhotoUpload({ courtId, onUploadSuccess, onUploadError })
       });
       setUploadProgress(initialProgress);
 
-      const response = await fetch(`http://localhost:5001/api/courts/${courtId}/photos`, {
+      const response = await fetch(`${API_BASE_URL}/courts/${courtId}/photos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

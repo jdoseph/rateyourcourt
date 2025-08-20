@@ -16,7 +16,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
   useEffect(() => {
     async function fetchVerificationData() {
       try {
-        const response = await fetch(`http://localhost:5001/api/verifications/court/${courtId}`);
+        const response = await fetch(`${API_BASE_URL}/verifications/court/${courtId}`);
         if (response.ok) {
           const data = await response.json();
           setVerificationData(data);
@@ -53,7 +53,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
     setSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:5001/api/verifications/submit', {
+      const response = await fetch('${API_BASE_URL}/verifications/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
         setShowVerificationForm(false);
         
         // Refresh verification data
-        const refreshResponse = await fetch(`http://localhost:5001/api/verifications/court/${courtId}`);
+        const refreshResponse = await fetch(`${API_BASE_URL}/verifications/court/${courtId}`);
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json();
           setVerificationData(refreshData);
