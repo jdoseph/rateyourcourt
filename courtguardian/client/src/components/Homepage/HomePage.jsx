@@ -19,12 +19,23 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchCourts() {
       try {
-        const res = await fetch(`${API_BASE_URL}/courts`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const res = await fetch(`${API_BASE_URL}/courts`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         if (!res.ok) throw new Error('Failed to fetch courts');
         const data = await res.json();
         setCourts(data);
       } catch (err) {
-        setError(err.message);
+        if (err.name === 'AbortError') {
+          setError('Request timeout - please try again');
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
