@@ -272,7 +272,7 @@ export default function AdminPanel({ user }) {
   // Fetch verification statistics
   const fetchVerificationStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/verifications/stats');
+      const response = await fetch(`${API_BASE_URL}/verifications/stats`);
       if (response.ok) {
         const data = await response.json();
         setVerificationStats({
