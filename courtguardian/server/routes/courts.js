@@ -79,7 +79,7 @@ router.get('/search', async (req, res) => {
 // GET /api/courts?sport_type=pickleball (legacy endpoint)
 router.get('/', async (req, res) => {
   try {
-    const { sport_type } = req.query;
+    const { sport_type, limit = 100 } = req.query;
 
     const baseSql = `
       SELECT c.*,
@@ -90,7 +90,7 @@ router.get('/', async (req, res) => {
     `;
 
     const where = sport_type ? 'WHERE LOWER(c.sport_type) = LOWER($1)' : '';
-    const groupOrder = 'GROUP BY c.id ORDER BY c.name';
+    const groupOrder = `GROUP BY c.id ORDER BY c.name LIMIT ${parseInt(limit)}`;
 
     const params = sport_type ? [sport_type] : [];
 
