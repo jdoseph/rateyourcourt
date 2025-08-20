@@ -1,8 +1,5 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+// Legacy db.js - now uses the new database abstraction layer
+const db = require('./config/database');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-console.log('DB connection string:', process.env.DATABASE_URL);
-module.exports = pool;
+// Export the pool for backward compatibility with existing code
+module.exports = db.pool;
