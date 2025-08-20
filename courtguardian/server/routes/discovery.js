@@ -47,9 +47,11 @@ router.post('/reverse-geocode', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Reverse geocoding error:', error);
+    console.error('Error details:', error.stack);
     res.status(500).json({ 
       error: 'Failed to reverse geocode coordinates',
-      message: error.message 
+      message: error.message,
+      details: error.stack
     });
   }
 });
