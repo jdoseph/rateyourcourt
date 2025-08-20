@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // your pg pool
-const requireAuth = require('../middleware/auth'); // your JWT middleware
+const authenticateToken = require('../middleware/auth'); // your JWT middleware
 const { ALLOWED_SPORTS } = require('../constants');
 
 // POST /api/courts  (protected)
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   const { name, address, lat, lng, surface_type, lighting, court_count, sport_type } = req.body;
   const created_by = req.user.id; // also move here to catch scope
 
@@ -104,7 +104,7 @@ router.get('/', async (req, res) => {
 
 
 // Suggest a new court (requires authentication)
-router.post('/suggest', requireAuth, async (req, res) => {
+router.post('/suggest', authenticateToken, async (req, res) => {
   const { name, address, sportType, latitude, longitude, description, contactInfo } = req.body;
 
   // Validation
@@ -141,7 +141,7 @@ router.post('/suggest', requireAuth, async (req, res) => {
 });
 
 // Get user's court suggestions (requires authentication)
-router.get('/suggestions/my', requireAuth, async (req, res) => {
+router.get('/suggestions/my', authenticateToken, async (req, res) => {
   try {
     const suggestions = await getUserSuggestions(req.user.id);
     res.json({ suggestions });
