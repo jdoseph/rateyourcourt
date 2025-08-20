@@ -5,6 +5,7 @@ import CourtCarousel from './CourtCarousel';
 import InfoSection from './InfoSection';
 import CallToActionSection from './CallToActionSection';
 import DiscoverySection from './DiscoverySection';
+import { API_BASE_URL } from '../../constants';
 import '../../App.css';
 
 export default function HomePage() {
@@ -18,7 +19,7 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchCourts() {
       try {
-        const res = await fetch('http://localhost:5001/api/courts');
+        const res = await fetch(`${API_BASE_URL}/courts`);
         if (!res.ok) throw new Error('Failed to fetch courts');
         const data = await res.json();
         setCourts(data);
