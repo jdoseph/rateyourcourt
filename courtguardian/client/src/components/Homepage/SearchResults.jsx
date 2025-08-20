@@ -342,7 +342,7 @@ export default function SearchResults() {
           // Otherwise, fetch all courts and filter by sport if specified
           const courtUrl = sport && sport !== 'All Sports' 
             ? `${API_BASE_URL}/courts?sport_type=${encodeURIComponent(sport)}`
-            : '${API_BASE_URL}/courts';
+            : `${API_BASE_URL}/courts`;
           const res = await fetch(courtUrl);
           if (!res.ok) throw new Error('Failed to fetch courts');
           const data = await res.json();
