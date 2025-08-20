@@ -1,5 +1,11 @@
+[variables]
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs_18"]
+
 [phases.install]
-cmds = ["cd server && npm install"]
+cmds = ["cd server && npm ci"]
 
 [start]
 cmd = "cd server && npm start"
