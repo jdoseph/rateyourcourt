@@ -29,7 +29,7 @@ const courtsRoutes = require('./routes/courts');
 const reviewsRoutes = require('./routes/reviews');
 const discoveryRoutes = require('./routes/discovery');
 const verificationsRoutes = require('./routes/verifications');
-const testApiRoutes = require('./routes/test-api');
+// const testApiRoutes = require('./routes/test-api'); // Disabled for production
 const debugDiscoveryRoutes = require('./routes/debug-discovery');
 const adminJobsRoutes = require('./routes/admin/jobs');
 const photosRoutes = require('./routes/photos');
@@ -39,7 +39,7 @@ app.use('/api/discovery', discoveryRoutes);
 app.use('/api/verifications', verificationsRoutes);
 // Reviews route with different pattern to avoid conflicts:
 app.use('/api/reviews', reviewsRoutes);
-app.use('/api/test', testApiRoutes);
+// app.use('/api/test', testApiRoutes); // Disabled for production
 app.use('/api/debug', debugDiscoveryRoutes);
 app.use('/api/admin/jobs', adminJobsRoutes);
 app.use('/api', photosRoutes);
