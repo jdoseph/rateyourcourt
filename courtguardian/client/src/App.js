@@ -67,11 +67,11 @@ function App() {
           <nav
             className="app-nav py-3 rounded-4 d-flex align-items-center justify-content-between flex-nowrap"
           >
-            <Link className="flex-shrink-0" to="/" style={{marginLeft:'1rem'}}>
+            <Link className="flex-shrink-0" to="/" style={{marginLeft:'1.5rem'}}>
               <img src="/icon-logo.svg" alt="RYC logo" className="app-logo" />
             </Link>
             
-            <div className="d-flex align-items-center flex-shrink-0" style={{marginLeft:'-1rem'}}>
+            <div className="d-flex align-items-center flex-shrink-0" style={{marginRight:'1.5rem'}}>
               {authLoading ? (
                 <div className="d-flex align-items-center">
                   <div className="spinner-border spinner-border-sm text-primary" role="status">
