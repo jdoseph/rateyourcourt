@@ -1,14 +1,11 @@
 const express = require('express');
-const { Pool } = require('pg');
 const googlePlacesService = require('../services/googlePlacesService');
 const { ALLOWED_SPORTS } = require('../constants');
 const authenticateToken = require('../middleware/auth');
 const { requireAdmin, requireModerator } = require('../middleware/adminAuth');
+const pool = require('../db');
 
 const router = express.Router();
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-});
 
 // Geocode an address to coordinates
 router.post('/geocode', async (req, res) => {
