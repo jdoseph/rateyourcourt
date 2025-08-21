@@ -344,10 +344,22 @@ export default function SearchResults() {
           const data = await res.json();
           setCourts(data.courts || []);
         } else {
-          // Otherwise, fetch all courts and filter by sport if specified
-          const courtUrl = sport && sport !== 'All Sports' 
-            ? `${API_BASE_URL}/courts?sport_type=${encodeURIComponent(sport)}`
-            : `${API_BASE_URL}/courts`;
+          // Otherwise, fetch all courts and filter by sport/search term if specified
+          let courtUrl = `${API_BASE_URL}/courts`;
+          const params = new URLSearchParams();
+          
+          if (sport && sport !== 'All Sports') {
+            params.append('sport_type', sport);
+          }
+          
+          if (query && query.trim()) {
+            params.append('searchTerm', query.trim());
+          }
+          
+          if (params.toString()) {
+            courtUrl += '?' + params.toString();
+          }
+          
           const res = await fetch(courtUrl);
           if (!res.ok) throw new Error('Failed to fetch courts');
           const data = await res.json();

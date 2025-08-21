@@ -80,11 +80,11 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// GET /api/courts?sport_type=pickleball (legacy endpoint)
+// GET /api/courts?sport_type=pickleball&searchTerm=text (supports search)
 router.get('/', async (req, res) => {
   const startTime = Date.now();
   try {
-    const { sport_type, limit = 100 } = req.query;
+    const { sport_type, searchTerm, limit = 100 } = req.query;
 
     const baseSql = `
       SELECT c.*,
@@ -94,13 +94,42 @@ router.get('/', async (req, res) => {
       LEFT JOIN reviews r ON c.id = r.court_id
     `;
 
-    const where = sport_type ? 'WHERE $1 = ANY(c.sport_types)' : '';
+    let whereConditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    // Sport type filter
+    if (sport_type) {
+      whereConditions.push(`$${paramIndex} = ANY(c.sport_types)`);
+      params.push(sport_type);
+      paramIndex++;
+    }
+
+    // Search term filter (using same logic as search endpoint)
+    if (searchTerm) {
+      const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      if (searchWords.length > 0) {
+        const searchConditions = searchWords.map((word, index) => {
+          const paramNum = paramIndex + index;
+          return `(LOWER(c.name) LIKE LOWER($${paramNum}) OR LOWER(c.address) LIKE LOWER($${paramNum}))`;
+        }).join(' AND ');
+        
+        whereConditions.push(`(${searchConditions})`);
+        
+        // Add each word as a parameter with wildcards
+        searchWords.forEach(word => {
+          params.push(`%${word}%`);
+        });
+        paramIndex += searchWords.length;
+      }
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     const groupOrder = `GROUP BY c.id ORDER BY c.name LIMIT ${parseInt(limit)}`;
 
-    const params = sport_type ? [sport_type] : [];
-
-    console.log('Executing courts query:', [baseSql, where, groupOrder].join(' '));
-    const result = await pool.query([baseSql, where, groupOrder].join(' '), params);
+    const fullQuery = [baseSql, whereClause, groupOrder].join(' ');
+    console.log('Executing courts query:', fullQuery, 'with params:', params);
+    const result = await pool.query(fullQuery, params);
     const executionTime = Date.now() - startTime;
     console.log(`Courts query completed in ${executionTime}ms, returned ${result.rows.length} rows`);
     res.json(result.rows);
