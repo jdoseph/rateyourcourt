@@ -301,6 +301,12 @@ export default function SearchResults() {
   const [newSearchTerm, setNewSearchTerm] = useState(query);
   const [newSelectedSport, setNewSelectedSport] = useState(sport || 'All Sports');
 
+  // Update search form when URL params change
+  useEffect(() => {
+    setNewSearchTerm(query);
+    setNewSelectedSport(sport || 'All Sports');
+  }, [query, sport]);
+
   // Handle new search
   const handleNewSearch = () => {
     if (!newSearchTerm.trim()) return;
@@ -372,7 +378,7 @@ export default function SearchResults() {
       }
     }
     fetchCourts();
-  }, [sport, lat, lng]);
+  }, [sport, lat, lng, query]);
 
   useEffect(() => {
     let filtered = courts;
