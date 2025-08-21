@@ -333,15 +333,16 @@ async function saveDiscoveredCourt(courtData, createdBy) {
     // Insert new court
     const result = await client.query(`
       INSERT INTO courts (
-        name, sport_type, address, surface_type, lighting, court_count,
+        name, sport_type, sport_types, address, surface_type, lighting, court_count,
         lat, lng, latitude, longitude, google_place_id, google_rating, google_total_ratings,
         phone_number, website_url, opening_hours, price_level, photos,
         verification_status, discovery_source, created_by, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *
     `, [
       courtData.name,
       courtData.sport_type,
+      [courtData.sport_type], // sport_types array
       courtData.address,
       courtData.surface_type,
       courtData.lighting,
