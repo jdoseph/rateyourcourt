@@ -205,7 +205,12 @@ function CourtCard({ court, query }) {
           fontSize: '0.9rem',
           fontWeight: '500'
         }}>
-          {highlightMatch(court.sport_type || 'Sports Court', query)}
+          {highlightMatch(
+            (Array.isArray(court.sport_types) && court.sport_types.length > 0 
+              ? court.sport_types.join(', ') 
+              : 'Sports Court'), 
+            query
+          )}
         </span>
       </div>
       
@@ -392,7 +397,8 @@ export default function SearchResults() {
         const queryNoSpaces = query.toLowerCase().replace(/\s/g, '');
         filtered = courts.filter(court =>
           (court.name && court.name.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces)) ||
-          (court.sport_types && court.sport_types.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces)) ||
+          (court.sport_types && Array.isArray(court.sport_types) && 
+           court.sport_types.some(sport => sport.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces))) ||
           (court.address && court.address.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces))
         );
       }
