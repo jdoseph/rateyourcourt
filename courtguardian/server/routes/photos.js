@@ -115,14 +115,14 @@ router.post('/courts/:courtId/photos', authenticateToken, upload.array('photos',
         // Save to database
         const photoResult = await pool.query(`
           INSERT INTO court_photos (
-            court_id, user_id, photo_url, thumbnail_url, 
-            original_filename, file_size, width, height, is_primary
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            court_id, user_id, file_path, thumbnail_path, 
+            original_name, file_size, mime_type
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *
         `, [
           courtId, userId, photoUrl, thumbnailUrl,
           file.originalname, processedImage.length, 
-          metadata.width, metadata.height, isPrimary
+          'image/webp'
         ]);
         
         uploadedPhotos.push(photoResult.rows[0]);
@@ -214,14 +214,14 @@ router.post('/courts/:courtId/reviews/:reviewId/photos', authenticateToken, uplo
         // Save to database
         const photoResult = await pool.query(`
           INSERT INTO review_photos (
-            review_id, court_id, user_id, photo_url, thumbnail_url, 
-            original_filename, file_size, width, height
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            review_id, user_id, file_path, thumbnail_path, 
+            original_name, file_size, mime_type
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *
         `, [
-          reviewId, courtId, userId, photoUrl, thumbnailUrl,
+          reviewId, userId, photoUrl, thumbnailUrl,
           file.originalname, processedImage.length, 
-          metadata.width, metadata.height
+          'image/webp'
         ]);
         
         uploadedPhotos.push(photoResult.rows[0]);
@@ -271,12 +271,10 @@ router.get('/courts/:courtId/photos', async (req, res) => {
     const courtPhotos = await pool.query(`
       SELECT 
         cp.id,
-        cp.photo_url,
-        cp.thumbnail_url,
+        cp.file_path as photo_url,
+        cp.thumbnail_path as thumbnail_url,
         cp.file_size,
-        cp.width,
-        cp.height,
-        cp.is_primary,
+        cp.created_at,
         cp.is_approved,
         cp.created_at,
         cp.court_id,
@@ -294,11 +292,9 @@ router.get('/courts/:courtId/photos', async (req, res) => {
     const reviewPhotos = await pool.query(`
       SELECT 
         rp.id,
-        rp.photo_url,
-        rp.thumbnail_url,
+        rp.file_path as photo_url,
+        rp.thumbnail_path as thumbnail_url,
         rp.file_size,
-        rp.width,
-        rp.height,
         rp.created_at,
         rp.court_id,
         rp.user_id,
@@ -389,8 +385,8 @@ router.delete('/photos/:photoId', authenticateToken, async (req, res) => {
     
     // Delete files
     try {
-      const photoPath = path.join(__dirname, '..', photo.photo_url);
-      const thumbnailPath = path.join(__dirname, '..', photo.thumbnail_url);
+      const photoPath = path.join(__dirname, '..', photo.file_path);
+      const thumbnailPath = path.join(__dirname, '..', photo.thumbnail_path);
       
       await fs.unlink(photoPath).catch(() => {}); // Ignore if file doesn't exist
       await fs.unlink(thumbnailPath).catch(() => {}); // Ignore if file doesn't exist
@@ -481,9 +477,9 @@ router.get('/admin/photos', authenticateToken, async (req, res) => {
     const courtPhotos = await pool.query(`
       SELECT 
         cp.id,
-        cp.photo_url,
-        cp.thumbnail_url,
-        cp.original_filename,
+        cp.file_path as photo_url,
+        cp.thumbnail_path as thumbnail_url,
+        cp.original_name as original_filename,
         cp.file_size,
         cp.width,
         cp.height,
@@ -504,12 +500,10 @@ router.get('/admin/photos', authenticateToken, async (req, res) => {
     const reviewPhotos = await pool.query(`
       SELECT 
         rp.id,
-        rp.photo_url,
-        rp.thumbnail_url,
-        rp.original_filename,
+        rp.file_path as photo_url,
+        rp.thumbnail_path as thumbnail_url,
+        rp.original_name as original_filename,
         rp.file_size,
-        rp.width,
-        rp.height,
         rp.is_approved,
         rp.created_at,
         rp.court_id,

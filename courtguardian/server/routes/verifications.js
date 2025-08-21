@@ -31,8 +31,8 @@ router.get('/court/:courtId', async (req, res) => {
     // Get recent verifications for this court
     const verificationsQuery = `
       SELECT 
-        cv.id, cv.field_name, cv.old_value, cv.new_value, 
-        cv.verification_type, cv.status, cv.notes, cv.created_at,
+        cv.id, cv.field_name, cv.current_value as old_value, cv.proposed_value as new_value, 
+        cv.status, cv.evidence as notes, cv.created_at,
         u.username as contributor_name
       FROM court_verifications cv
       LEFT JOIN users u ON cv.user_id = u.id
@@ -134,13 +134,13 @@ router.post('/submit', authenticateToken, async (req, res) => {
     // Insert verification record
     const insertQuery = `
       INSERT INTO court_verifications 
-      (court_id, user_id, field_name, old_value, new_value, verification_type, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (court_id, user_id, field_name, current_value, proposed_value, evidence)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, created_at
     `;
     
     const result = await pool.query(insertQuery, [
-      courtId, req.user.id, fieldName, oldValue, newValue, verificationType, notes
+      courtId, req.user.id, fieldName, oldValue, newValue, notes
     ]);
     
     res.status(201).json({
@@ -162,8 +162,8 @@ router.get('/admin/pending', authenticateToken, requireModerator, async (req, re
     try {
       const query = `
         SELECT 
-          cv.id, cv.court_id, cv.field_name, cv.old_value, cv.new_value,
-          cv.verification_type, cv.notes, cv.created_at,
+          cv.id, cv.court_id, cv.field_name, cv.current_value as old_value, cv.proposed_value as new_value,
+          cv.evidence as notes, cv.created_at,
           c.name as court_name, c.address as court_address,
           u.username as contributor_name, u.email as contributor_email
         FROM court_verifications cv
