@@ -214,12 +214,12 @@ router.post('/courts/:courtId/reviews/:reviewId/photos', authenticateToken, uplo
         // Save to database
         const photoResult = await pool.query(`
           INSERT INTO review_photos (
-            review_id, user_id, file_path, thumbnail_path, 
+            review_id, user_id, filename, file_path, thumbnail_path, 
             original_name, file_size, mime_type
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           RETURNING *
         `, [
-          reviewId, userId, photoUrl, thumbnailUrl,
+          reviewId, userId, filename, photoUrl, thumbnailUrl,
           file.originalname, processedImage.length, 
           'image/webp'
         ]);
@@ -294,7 +294,6 @@ router.get('/courts/:courtId/photos', async (req, res) => {
         rp.thumbnail_path as thumbnail_url,
         rp.file_size,
         rp.created_at,
-        rp.court_id,
         rp.user_id,
         u.username,
         u.avatar_colors,
@@ -303,7 +302,9 @@ router.get('/courts/:courtId/photos', async (req, res) => {
         false as is_primary
       FROM review_photos rp
       LEFT JOIN users u ON rp.user_id = u.id
-      WHERE rp.court_id = $1
+      WHERE rp.review_id IN (
+        SELECT r.id FROM reviews r WHERE r.court_id = $1
+      )
     `, [courtId]);
     
     // Combine and sort photos
@@ -497,7 +498,6 @@ router.get('/admin/photos', authenticateToken, async (req, res) => {
         rp.original_name as original_filename,
         rp.file_size,
         rp.created_at,
-        rp.court_id,
         rp.user_id,
         rp.review_id,
         u.username,
@@ -506,7 +506,8 @@ router.get('/admin/photos', authenticateToken, async (req, res) => {
         false as is_primary
       FROM review_photos rp
       LEFT JOIN users u ON rp.user_id = u.id
-      LEFT JOIN courts c ON rp.court_id = c.id
+      LEFT JOIN reviews r ON rp.review_id = r.id
+      LEFT JOIN courts c ON r.court_id = c.id
       ORDER BY rp.created_at DESC
     `);
     
