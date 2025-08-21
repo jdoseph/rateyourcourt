@@ -31,14 +31,18 @@ export default function SavedCourts({ user }) {
         const transformedCourts = data.savedCourts.map(court => ({
           id: court.id,
           name: court.name,
-          sportType: court.sport_type || 'Unknown',
+          sportType: Array.isArray(court.sport_types) && court.sport_types.length > 0 
+            ? court.sport_types.join(', ') 
+            : 'Unknown',
           address: court.address || 'Address not available',
           averageRating: parseFloat(court.average_rating) || 0,
           reviewCount: parseInt(court.review_count) || 0,
           surface: court.surface_type || 'Unknown',
           courtCount: court.court_count || 1,
-          savedDate: court.saved_at.split('T')[0], // Format date
-          description: `${court.sport_type} court with ${court.surface_type} surface.`,
+          savedDate: court.created_at.split('T')[0], // Format date
+          description: `${Array.isArray(court.sport_types) && court.sport_types.length > 0 
+            ? court.sport_types.join(', ') 
+            : 'Unknown'} court with ${court.surface_type || 'Unknown'} surface.`,
           lighting: court.lighting
         }));
         

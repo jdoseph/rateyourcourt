@@ -366,7 +366,7 @@ export default function SearchResults() {
       const fuseOptions = {
         keys: [
           { name: 'name', weight: 0.5 },           // Court name is most important
-          { name: 'sport_type', weight: 0.3 },     // Sport type is second priority
+          { name: 'sport_types', weight: 0.3 },     // Sport type is second priority
           { name: 'address', weight: 0.2 }         // Address is lowest priority
         ],
         threshold: 0.4,        // 0.0 = perfect match, 1.0 = match anything
@@ -392,7 +392,7 @@ export default function SearchResults() {
         const queryNoSpaces = query.toLowerCase().replace(/\s/g, '');
         filtered = courts.filter(court =>
           (court.name && court.name.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces)) ||
-          (court.sport_type && court.sport_type.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces)) ||
+          (court.sport_types && court.sport_types.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces)) ||
           (court.address && court.address.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces))
         );
       }

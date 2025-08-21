@@ -29,7 +29,7 @@ export default function CourtCard({ court, showRating = true, showReviews = fals
       </div>
       
       <div className="court-card-sport">
-        <span>{court.sport_type || 'Sports Court'}</span>
+        <span>{court.sport_types || 'Sports Court'}</span>
       </div>
       
       <div className="court-card-footer">

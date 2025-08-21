@@ -1275,7 +1275,7 @@ export default function CourtDetails({ courtId, user }) {
 
                     <button
                       type="submit"
-                      className={`btn btn-primary review-modal-submit-button ${
+                      className={`review-modal-submit-button ${
                         submitting ? 'review-modal-submit-button-loading' : 'review-modal-submit-button-active'
                       }`}
                       disabled={submitting}

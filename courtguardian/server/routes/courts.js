@@ -191,11 +191,21 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     }
     
     if (searchTerm) {
-      query += ` AND (
-        LOWER(name) LIKE LOWER($${paramIndex}) 
-        OR LOWER(address) LIKE LOWER($${paramIndex})
-      )`;
-      params.push(`%${searchTerm}%`);
+      // Split search term into words for more flexible matching
+      const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      if (searchWords.length > 0) {
+        const searchConditions = searchWords.map((word, index) => {
+          const paramNum = paramIndex + index;
+          return `(LOWER(name) LIKE LOWER($${paramNum}) OR LOWER(address) LIKE LOWER($${paramNum}))`;
+        }).join(' AND ');
+        
+        query += ` AND (${searchConditions})`;
+        
+        // Add each word as a parameter with wildcards
+        searchWords.forEach(word => {
+          params.push(`%${word}%`);
+        });
+      }
     }
     
     query += ' ORDER BY distance LIMIT 50';

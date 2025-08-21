@@ -766,7 +766,7 @@ export default function AdminPanel({ user }) {
                         📍 {suggestion.address}
                       </p>
                       <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                        <span><strong>Sport:</strong> {suggestion.sport_type}</span>
+                        <span><strong>Sport:</strong> {suggestion.sport_types}</span>
                         <span><strong>Suggested by:</strong> {suggestion.suggested_by_username}</span>
                         <span><strong>Date:</strong> {new Date(suggestion.created_at).toLocaleDateString()}</span>
                       </div>
