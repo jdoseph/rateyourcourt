@@ -20,7 +20,7 @@ export default function HomePage() {
     async function fetchCourts() {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
         const res = await fetch(`${API_BASE_URL}/courts`, {
           signal: controller.signal

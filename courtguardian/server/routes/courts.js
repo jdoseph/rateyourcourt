@@ -78,6 +78,7 @@ router.get('/search', async (req, res) => {
 
 // GET /api/courts?sport_type=pickleball (legacy endpoint)
 router.get('/', async (req, res) => {
+  const startTime = Date.now();
   try {
     const { sport_type, limit = 100 } = req.query;
 
@@ -96,6 +97,8 @@ router.get('/', async (req, res) => {
 
     console.log('Executing courts query:', [baseSql, where, groupOrder].join(' '));
     const result = await pool.query([baseSql, where, groupOrder].join(' '), params);
+    const executionTime = Date.now() - startTime;
+    console.log(`Courts query completed in ${executionTime}ms, returned ${result.rows.length} rows`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /api/courts error:', err);
