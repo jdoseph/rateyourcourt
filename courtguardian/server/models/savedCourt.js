@@ -5,7 +5,7 @@ async function getUserSavedCourts(userId) {
   const result = await pool.query(
     `SELECT 
        sc.id as saved_id,
-       sc.saved_at,
+       sc.created_at,
        c.id,
        c.name,
        c.address,
@@ -19,8 +19,8 @@ async function getUserSavedCourts(userId) {
      JOIN courts c ON sc.court_id = c.id
      LEFT JOIN reviews r ON c.id = r.court_id
      WHERE sc.user_id = $1
-     GROUP BY sc.id, sc.saved_at, c.id, c.name, c.address, c.sport_types, c.surface_type, c.court_count, c.lighting
-     ORDER BY sc.saved_at DESC`,
+     GROUP BY sc.id, sc.created_at, c.id, c.name, c.address, c.sport_types, c.surface_type, c.court_count, c.lighting
+     ORDER BY sc.created_at DESC`,
     [userId]
   );
   return result.rows;
@@ -32,7 +32,7 @@ async function saveCourtForUser(userId, courtId) {
     const result = await pool.query(
       `INSERT INTO saved_courts (user_id, court_id) 
        VALUES ($1, $2) 
-       RETURNING id, saved_at`,
+       RETURNING id, created_at`,
       [userId, courtId]
     );
     return result.rows[0];
