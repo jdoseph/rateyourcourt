@@ -6,20 +6,24 @@ const { ALLOWED_SPORTS } = require('../constants');
 
 // POST /api/courts  (protected)
 router.post('/', authenticateToken, async (req, res) => {
-  const { name, address, lat, lng, surface_type, lighting, court_count, sport_type } = req.body;
+  const { name, address, lat, lng, surface_type, lighting, court_count, sport_types } = req.body;
   const created_by = req.user.id; // also move here to catch scope
 
   try {
-    if (!name || lat == null || lng == null || !sport_type) {
-      return res.status(400).json({ error: 'name, lat, lng, sport_type are required' });
+    if (!name || lat == null || lng == null || !sport_types || !Array.isArray(sport_types)) {
+      return res.status(400).json({ error: 'name, lat, lng, sport_types (array) are required' });
     }
-    if (!ALLOWED_SPORTS.includes(String(sport_type).toLowerCase())) {
-      return res.status(400).json({ error: 'Invalid sport_type' });
+    
+    // Validate all sport types
+    for (const sport of sport_types) {
+      if (!ALLOWED_SPORTS.includes(String(sport))) {
+        return res.status(400).json({ error: `Invalid sport type: ${sport}` });
+      }
     }
 
     const result = await pool.query(
       `INSERT INTO public.courts
-      (name, address, lat, lng, surface_type, lighting, court_count, sport_type, created_by)
+      (name, address, lat, lng, surface_type, lighting, court_count, sport_types, created_by)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
      RETURNING *`,
       [
@@ -30,7 +34,7 @@ router.post('/', authenticateToken, async (req, res) => {
         surface_type || null,
         lighting === true || lighting === 'true',
         court_count ? Number(court_count) : null,
-        sport_type.toLowerCase(),
+        sport_types,
         created_by
       ]
     );
@@ -39,7 +43,7 @@ router.post('/', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('POST /api/courts error:', err);
     console.log('Inserting court:', {
-      name, address, lat, lng, surface_type, lighting, court_count, sport_type, created_by
+      name, address, lat, lng, surface_type, lighting, court_count, sport_types, created_by
     });    
     res.status(500).json({ error: 'Server error' });
   }
@@ -90,7 +94,7 @@ router.get('/', async (req, res) => {
       LEFT JOIN reviews r ON c.id = r.court_id
     `;
 
-    const where = sport_type ? 'WHERE LOWER(c.sport_type) = LOWER($1)' : '';
+    const where = sport_type ? 'WHERE $1 = ANY(c.sport_types)' : '';
     const groupOrder = `GROUP BY c.id ORDER BY c.name LIMIT ${parseInt(limit)}`;
 
     const params = sport_type ? [sport_type] : [];
@@ -180,8 +184,8 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     let paramIndex = 4;
     
     if (sportType && ALLOWED_SPORTS.includes(sportType)) {
-      // Check both sport_type and sport_types array for compatibility
-      query += ` AND (LOWER(sport_type) = LOWER($${paramIndex}) OR $${paramIndex} = ANY(sport_types))`;
+      // Use sport_types array
+      query += ` AND $${paramIndex} = ANY(sport_types)`;
       params.push(sportType);
       paramIndex++;
     }
