@@ -1088,7 +1088,8 @@ export default function CourtDetails({ courtId, user }) {
                           }}
                         >
                           <img
-                            src={`http://localhost:5001${photo.thumbnail_url}`}
+                              src={photo.thumbnail_url.startsWith('http') ? photo.thumbnail_url :
+                                `http://localhost:5001${photo.thumbnail_url}`}
                             alt={`Review photo ${photoIndex + 1}`}
                             style={{
                               width: '100%',

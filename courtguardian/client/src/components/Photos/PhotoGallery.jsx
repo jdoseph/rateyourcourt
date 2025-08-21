@@ -12,8 +12,10 @@ export default function PhotoGallery({ courtId, photos, showUpload = false, onPh
   useEffect(() => {
     if (photos && photos.length > 0) {
       const images = photos.map(photo => ({
-        original: `http://localhost:5001${photo.photo_url}`,
-        thumbnail: `http://localhost:5001${photo.thumbnail_url}`,
+        original: photo.photo_url.startsWith('http') ? photo.photo_url :
+        `http://localhost:5001${photo.photo_url}`,
+        thumbnail: photo.thumbnail_url.startsWith('http') ? photo.thumbnail_url
+        : `http://localhost:5001${photo.thumbnail_url}`,
         description: '',
         originalAlt: `Court photo ${photo.id}`,
         thumbnailAlt: `Court photo thumbnail ${photo.id}`,
