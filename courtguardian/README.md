@@ -1,5 +1,4 @@
 # Rate Your Court 🏟️
-
 A comprehensive full-stack web application for discovering, reviewing, and managing sports courts across multiple sport types.
 
 ## ✨ Features

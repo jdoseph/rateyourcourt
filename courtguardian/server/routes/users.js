@@ -203,7 +203,7 @@ router.put('/reviews/:reviewId', authenticateToken, async (req, res) => {
 // Delete a review
 router.delete('/reviews/:reviewId', authenticateToken, async (req, res) => {
   try {
-    const reviewId = parseInt(req.params.reviewId);
+    const reviewId = req.params.reviewId;
     
     const deletedReview = await deleteReview(reviewId, req.user.id);
     
