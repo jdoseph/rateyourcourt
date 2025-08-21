@@ -108,9 +108,12 @@ router.post('/courts/:courtId/photos', authenticateToken, upload.array('photos',
         await fs.writeFile(photoPath, processedImage);
         await fs.writeFile(thumbnailPath, thumbnail);
         
-        // Generate URLs
-        const photoUrl = `/uploads/court-photos/${filename}`;
-        const thumbnailUrl = `/uploads/thumbnails/${thumbnailFilename}`;
+        // Generate URLs with proper base URL for production
+        const baseUrl = process.env.NODE_ENV === 'production' 
+          ? (process.env.SERVER_BASE_URL || 'https://your-railway-app.railway.app')
+          : '';
+        const photoUrl = `${baseUrl}/uploads/court-photos/${filename}`;
+        const thumbnailUrl = `${baseUrl}/uploads/thumbnails/${thumbnailFilename}`;
         
         // Save to database
         const photoResult = await pool.query(`
@@ -207,9 +210,12 @@ router.post('/courts/:courtId/reviews/:reviewId/photos', authenticateToken, uplo
         await fs.writeFile(photoPath, processedImage);
         await fs.writeFile(thumbnailPath, thumbnail);
         
-        // Generate URLs
-        const photoUrl = `/uploads/review-photos/${filename}`;
-        const thumbnailUrl = `/uploads/thumbnails/${thumbnailFilename}`;
+        // Generate URLs with proper base URL for production
+        const baseUrl = process.env.NODE_ENV === 'production' 
+          ? (process.env.SERVER_BASE_URL || 'https://your-railway-app.railway.app')
+          : '';
+        const photoUrl = `${baseUrl}/uploads/review-photos/${filename}`;
+        const thumbnailUrl = `${baseUrl}/uploads/thumbnails/${thumbnailFilename}`;
         
         // Save to database
         const photoResult = await pool.query(`
