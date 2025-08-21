@@ -312,7 +312,7 @@ router.get('/stats', async (req, res) => {
       }] };
     }
     
-    // Get courts needing verification
+    // Get courts needing verification (limit for performance)
     let needingVerificationResult;
     try {
       const courtsNeedingVerificationQuery = `
@@ -321,6 +321,7 @@ router.get('/stats', async (req, res) => {
         WHERE surface_type IS NULL 
            OR court_count IS NULL 
            OR lighting IS NULL
+        LIMIT 1000
       `;
       needingVerificationResult = await pool.query(courtsNeedingVerificationQuery);
     } catch (error) {

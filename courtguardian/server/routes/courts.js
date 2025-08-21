@@ -94,11 +94,14 @@ router.get('/', async (req, res) => {
 
     const params = sport_type ? [sport_type] : [];
 
+    console.log('Executing courts query:', [baseSql, where, groupOrder].join(' '));
     const result = await pool.query([baseSql, where, groupOrder].join(' '), params);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /api/courts error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error details:', err.message);
+    console.error('Stack trace:', err.stack);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
