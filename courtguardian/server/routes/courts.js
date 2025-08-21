@@ -180,7 +180,8 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     let paramIndex = 4;
     
     if (sportType && ALLOWED_SPORTS.includes(sportType)) {
-      query += ` AND LOWER(sport_type) = LOWER($${paramIndex})`;
+      // Check both sport_type and sport_types array for compatibility
+      query += ` AND (LOWER(sport_type) = LOWER($${paramIndex}) OR $${paramIndex} = ANY(sport_types))`;
       params.push(sportType);
       paramIndex++;
     }
