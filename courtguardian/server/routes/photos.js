@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 const authenticateToken = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs').promises;
+const { uploadFile, getPublicUrl, deleteFile } = require('../utils/supabaseStorage');
 const router = express.Router();
 
 // Database connection
@@ -104,16 +105,29 @@ router.post('/courts/:courtId/photos', authenticateToken, upload.array('photos',
         // Get image dimensions
         const metadata = await sharp(processedImage).metadata();
         
-        // Save files
-        await fs.writeFile(photoPath, processedImage);
-        await fs.writeFile(thumbnailPath, thumbnail);
+        // Upload to Supabase Storage
+        const photoUpload = await uploadFile(
+          processedImage,
+          'court-photos',
+          `court-photos/${filename}`,
+          'image/webp'
+        );
         
-        // Generate URLs with proper base URL for production
-        const baseUrl = process.env.NODE_ENV === 'production' 
-          ? (process.env.SERVER_BASE_URL || 'https://your-railway-app.railway.app')
-          : '';
-        const photoUrl = `${baseUrl}/uploads/court-photos/${filename}`;
-        const thumbnailUrl = `${baseUrl}/uploads/thumbnails/${thumbnailFilename}`;
+        const thumbnailUpload = await uploadFile(
+          thumbnail,
+          'court-photos',
+          `thumbnails/${thumbnailFilename}`,
+          'image/webp'
+        );
+        
+        if (photoUpload.error || thumbnailUpload.error) {
+          console.error('Upload error:', photoUpload.error || thumbnailUpload.error);
+          continue;
+        }
+        
+        // Get public URLs
+        const photoUrl = getPublicUrl('court-photos', `court-photos/${filename}`);
+        const thumbnailUrl = getPublicUrl('court-photos', `thumbnails/${thumbnailFilename}`);
         
         // Save to database
         const photoResult = await pool.query(`
@@ -206,16 +220,29 @@ router.post('/courts/:courtId/reviews/:reviewId/photos', authenticateToken, uplo
         // Get image dimensions
         const metadata = await sharp(processedImage).metadata();
         
-        // Save files
-        await fs.writeFile(photoPath, processedImage);
-        await fs.writeFile(thumbnailPath, thumbnail);
+        // Upload to Supabase Storage
+        const photoUpload = await uploadFile(
+          processedImage,
+          'review-photos',
+          `review-photos/${filename}`,
+          'image/webp'
+        );
         
-        // Generate URLs with proper base URL for production
-        const baseUrl = process.env.NODE_ENV === 'production' 
-          ? (process.env.SERVER_BASE_URL || 'https://your-railway-app.railway.app')
-          : '';
-        const photoUrl = `${baseUrl}/uploads/review-photos/${filename}`;
-        const thumbnailUrl = `${baseUrl}/uploads/thumbnails/${thumbnailFilename}`;
+        const thumbnailUpload = await uploadFile(
+          thumbnail,
+          'review-photos',
+          `thumbnails/${thumbnailFilename}`,
+          'image/webp'
+        );
+        
+        if (photoUpload.error || thumbnailUpload.error) {
+          console.error('Upload error:', photoUpload.error || thumbnailUpload.error);
+          continue;
+        }
+        
+        // Get public URLs
+        const photoUrl = getPublicUrl('review-photos', `review-photos/${filename}`);
+        const thumbnailUrl = getPublicUrl('review-photos', `thumbnails/${thumbnailFilename}`);
         
         // Save to database
         const photoResult = await pool.query(`
@@ -387,15 +414,18 @@ router.delete('/photos/:photoId', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Photo not found or permission denied' });
     }
     
-    // Delete files
+    // Delete files from Supabase Storage
     try {
-      const photoPath = path.join(__dirname, '..', photo.file_path);
-      const thumbnailPath = path.join(__dirname, '..', photo.thumbnail_path);
+      const bucket = type === 'review' ? 'review-photos' : 'court-photos';
       
-      await fs.unlink(photoPath).catch(() => {}); // Ignore if file doesn't exist
-      await fs.unlink(thumbnailPath).catch(() => {}); // Ignore if file doesn't exist
+      // Extract file paths from URLs
+      const photoPath = photo.file_path.split('/').slice(-2).join('/'); // Get last 2 parts of path
+      const thumbnailPath = photo.thumbnail_path.split('/').slice(-2).join('/');
+      
+      await deleteFile(bucket, photoPath);
+      await deleteFile(bucket, thumbnailPath);
     } catch (fileError) {
-      console.error('Error deleting files:', fileError);
+      console.error('Error deleting files from Supabase:', fileError);
     }
     
     // Delete from database
