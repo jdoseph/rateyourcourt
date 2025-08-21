@@ -46,9 +46,9 @@ router.get('/', optionalAuthenticateToken, async (req, res) => {
     
     if (reviewIds.length > 0) {
       const photosResult = await pool.query(
-        `SELECT rp.id, rp.review_id, rp.photo_url, rp.thumbnail_url, rp.created_at
+        `SELECT rp.id, rp.review_id, rp.file_path as photo_url, rp.thumbnail_path as thumbnail_url, rp.created_at
          FROM review_photos rp
-         WHERE rp.review_id = ANY($1) AND rp.is_approved = true
+         WHERE rp.review_id = ANY($1)
          ORDER BY rp.created_at ASC`,
         [reviewIds]
       );
@@ -229,8 +229,8 @@ router.delete('/:reviewId/photos/:photoId', authenticateToken, async (req, res) 
     const path = require('path');
     
     try {
-      const photoPath = path.join(__dirname, '..', photo.photo_url);
-      const thumbnailPath = path.join(__dirname, '..', photo.thumbnail_url);
+      const photoPath = path.join(__dirname, '..', photo.file_path);
+      const thumbnailPath = path.join(__dirname, '..', photo.thumbnail_path);
       
       await fs.unlink(photoPath).catch(() => {}); // Ignore if file doesn't exist
       await fs.unlink(thumbnailPath).catch(() => {}); // Ignore if file doesn't exist

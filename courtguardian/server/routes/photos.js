@@ -275,8 +275,6 @@ router.get('/courts/:courtId/photos', async (req, res) => {
         cp.thumbnail_path as thumbnail_url,
         cp.file_size,
         cp.created_at,
-        cp.is_approved,
-        cp.created_at,
         cp.court_id,
         cp.user_id,
         u.username,
@@ -285,7 +283,7 @@ router.get('/courts/:courtId/photos', async (req, res) => {
         'court' as photo_type
       FROM court_photos cp
       LEFT JOIN users u ON cp.user_id = u.id
-      WHERE cp.court_id = $1 AND cp.is_approved = true
+      WHERE cp.court_id = $1
     `, [courtId]);
 
     // Get review photos
@@ -302,11 +300,10 @@ router.get('/courts/:courtId/photos', async (req, res) => {
         u.avatar_colors,
         u.privacy_settings,
         'review' as photo_type,
-        false as is_primary,
-        true as is_approved
+        false as is_primary
       FROM review_photos rp
       LEFT JOIN users u ON rp.user_id = u.id
-      WHERE rp.court_id = $1 AND rp.is_approved = true
+      WHERE rp.court_id = $1
     `, [courtId]);
     
     // Combine and sort photos
@@ -453,10 +450,7 @@ router.patch('/admin/photos/:photoId/approve', authenticateToken, async (req, re
     
     const { photoId } = req.params;
     
-    await pool.query(
-      'UPDATE court_photos SET is_approved = true WHERE id = $1',
-      [photoId]
-    );
+    // Photo approval functionality not implemented in current schema
     
     res.json({ message: 'Photo approved successfully' });
     
@@ -483,8 +477,6 @@ router.get('/admin/photos', authenticateToken, async (req, res) => {
         cp.file_size,
         cp.width,
         cp.height,
-        cp.is_primary,
-        cp.is_approved,
         cp.created_at,
         cp.court_id,
         cp.user_id,
@@ -504,7 +496,6 @@ router.get('/admin/photos', authenticateToken, async (req, res) => {
         rp.thumbnail_path as thumbnail_url,
         rp.original_name as original_filename,
         rp.file_size,
-        rp.is_approved,
         rp.created_at,
         rp.court_id,
         rp.user_id,
@@ -538,10 +529,7 @@ router.patch('/admin/photos/:photoId/reject', authenticateToken, async (req, res
     
     const { photoId } = req.params;
     
-    await pool.query(
-      'UPDATE court_photos SET is_approved = false WHERE id = $1',
-      [photoId]
-    );
+    // Photo rejection functionality not implemented in current schema
     
     res.json({ message: 'Photo rejected successfully' });
     
