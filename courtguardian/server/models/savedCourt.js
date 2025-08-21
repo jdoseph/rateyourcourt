@@ -9,7 +9,7 @@ async function getUserSavedCourts(userId) {
        c.id,
        c.name,
        c.address,
-       c.sport_type,
+       c.sport_types,
        c.surface_type,
        c.court_count,
        c.lighting,
@@ -19,7 +19,7 @@ async function getUserSavedCourts(userId) {
      JOIN courts c ON sc.court_id = c.id
      LEFT JOIN reviews r ON c.id = r.court_id
      WHERE sc.user_id = $1
-     GROUP BY sc.id, sc.saved_at, c.id, c.name, c.address, c.sport_type, c.surface_type, c.court_count, c.lighting
+     GROUP BY sc.id, sc.saved_at, c.id, c.name, c.address, c.sport_types, c.surface_type, c.court_count, c.lighting
      ORDER BY sc.saved_at DESC`,
     [userId]
   );
