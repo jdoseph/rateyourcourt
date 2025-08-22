@@ -111,14 +111,14 @@ router.get('/', async (req, res) => {
       if (searchWords.length > 0) {
         const searchConditions = searchWords.map((word, index) => {
           const paramNum = paramIndex + index;
-          return `(LOWER(c.name) ~ LOWER($${paramNum}) OR LOWER(c.address) ~ LOWER($${paramNum}))`;
+          return `(LOWER(c.name) LIKE LOWER($${paramNum}) OR LOWER(c.address) LIKE LOWER($${paramNum}))`;
         }).join(' AND ');
         
         whereConditions.push(`(${searchConditions})`);
         
-        // Add each word as a parameter with word boundaries
+        // Add each word as a parameter with wildcards
         searchWords.forEach(word => {
-          params.push(`\\m${word}\\M`);
+          params.push(`%${word}%`);
         });
         paramIndex += searchWords.length;
       }
@@ -225,14 +225,14 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
       if (searchWords.length > 0) {
         const searchConditions = searchWords.map((word, index) => {
           const paramNum = paramIndex + index;
-          return `(LOWER(name) ~ LOWER($${paramNum}) OR LOWER(address) ~ LOWER($${paramNum}))`;
+          return `(LOWER(name) LIKE LOWER($${paramNum}) OR LOWER(address) LIKE LOWER($${paramNum}))`;
         }).join(' AND ');
         
         query += ` AND (${searchConditions})`;
         
-        // Add each word as a parameter with word boundaries
+        // Add each word as a parameter with wildcards
         searchWords.forEach(word => {
-          params.push(`\\m${word}\\M`);
+          params.push(`%${word}%`);
         });
       }
     }
