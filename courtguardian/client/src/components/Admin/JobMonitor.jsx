@@ -24,11 +24,20 @@ export default function JobMonitor() {
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch job status');
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Job monitoring endpoints might not exist yet
+          setJobStatus({ queue: { waiting: 0, active: 0, completed: 0, failed: 0 }, scheduler: { running: false } });
+          return;
+        }
+        throw new Error(`Failed to fetch job status: ${response.status}`);
+      }
       const data = await response.json();
       setJobStatus(data);
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching job status:', err);
+      // Set default status instead of blocking the UI
+      setJobStatus({ queue: { waiting: 0, active: 0, completed: 0, failed: 0 }, scheduler: { running: false } });
     }
   };
 
@@ -42,11 +51,20 @@ export default function JobMonitor() {
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch recent jobs');
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Job monitoring endpoints might not exist yet
+          setRecentJobs([]);
+          return;
+        }
+        throw new Error(`Failed to fetch recent jobs: ${response.status}`);
+      }
       const data = await response.json();
-      setRecentJobs(data.jobs);
+      setRecentJobs(data.jobs || []);
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching recent jobs:', err);
+      // Set empty array instead of blocking the UI
+      setRecentJobs([]);
     }
   };
 
@@ -106,12 +124,12 @@ export default function JobMonitor() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchJobStatus(), fetchRecentJobs()]);
-      setLoading(false);
+      setError(null);
       try {
         await Promise.all([fetchJobStatus(), fetchRecentJobs()]);
       } catch (err) {
-        console.error(err);
+        console.error('Error loading job monitor data:', err);
+        setError('Failed to load job data');
       } finally {
         setLoading(false);
       }
@@ -170,8 +188,7 @@ export default function JobMonitor() {
         <div className="queue-status-grid">
           <div className="queue-stat-item">
             <div className="queue-stat-number queue-stat-waiting">
-              {jobStatus?.queue.waiting || 0}
-              {jobStatus?.scheduler?.running ? 'Running' : 'Stopped'}
+              {jobStatus?.queue?.waiting || 0}
             </div>
             <div className="queue-stat-label">Waiting</div>
           </div>

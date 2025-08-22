@@ -1028,7 +1028,7 @@ export default function AdminPanel({ user }) {
                     boxSizing: 'border-box'
                   }}>
                     <button
-                      onClick={() => reviewVerification(verification.id, 'rejected')}
+                      onClick={() => reviewVerification(verification.id, 'reject')}
                       disabled={isProcessing}
                       style={{
                         padding: '0.5rem 1rem',
@@ -1047,7 +1047,7 @@ export default function AdminPanel({ user }) {
                       {isProcessing ? '⏳ Processing...' : '❌ Reject'}
                     </button>
                     <button
-                      onClick={() => reviewVerification(verification.id, 'approved')}
+                      onClick={() => reviewVerification(verification.id, 'approve')}
                       disabled={isProcessing}
                       style={{
                         padding: '0.5rem 1rem',
