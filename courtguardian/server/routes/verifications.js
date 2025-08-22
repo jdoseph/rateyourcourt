@@ -248,8 +248,20 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [JSON.parse(verification.new_value), verification.court_id];
         } else {
+          // Handle null values for required fields
+          let value = verification.new_value;
+          
+          // Provide defaults for required fields that can't be null
+          if (verification.field_name === 'address' && (!value || value.trim() === '')) {
+            value = 'Address not available';
+          } else if (verification.field_name === 'name' && (!value || value.trim() === '')) {
+            value = 'Unnamed Court';
+          } else if (verification.field_name === 'surface_type' && (!value || value.trim() === '')) {
+            value = 'Unknown';
+          }
+          
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          updateValues = [verification.new_value, verification.court_id];
+          updateValues = [value, verification.court_id];
         }
         
         await client.query(updateQuery, updateValues);
