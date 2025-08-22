@@ -194,9 +194,60 @@ class GooglePlacesService {
       return false;
     }
 
-    // Check if name or types suggest it's relevant
+    // Blacklist filter - exclude obvious non-court businesses
     const name = placeDetails.name.toLowerCase();
+    const address = (placeDetails.formatted_address || '').toLowerCase();
+    const combinedText = `${name} ${address}`;
+    
+    const blacklistTerms = [
+      // Retail/Store terms
+      'supply', 'store', 'shop', 'retail', 'equipment', 'gear', 'apparel', 'clothing', 
+      'pro shop', 'sports store', 'outlet', 'warehouse', 'depot', 'mart',
+      
+      // Business/Company terms  
+      'llc', 'inc', 'corp', 'company', 'corporation', 'enterprises', 'ltd',
+      
+      // Online/Digital terms
+      '.com', '.net', '.org', 'website', 'online', 'digital', 'web',
+      
+      // Manufacturing/Distribution
+      'manufacturer', 'distributor', 'wholesale', 'manufacturing', 'factory',
+      
+      // Education (unless it's for courts)
+      'academy', 'school', 'university', 'college', 'institute',
+      
+      // Services
+      'repair', 'service', 'maintenance', 'consulting', 'stringing',
+      
+      // Real Estate
+      'real estate', 'property', 'development', 'construction'
+    ];
+
+    for (const term of blacklistTerms) {
+      if (combinedText.includes(term)) {
+        console.log(`❌ Filtered out: contains blacklisted term "${term}"`);
+        return false;
+      }
+    }
+    console.log(`✅ Passed blacklist filter`);
+
+    // Exclude retail/store place types
     const types = placeDetails.types || [];
+    const excludedTypes = [
+      'clothing_store', 'sporting_goods_store', 'store', 'shoe_store',
+      'electronics_store', 'shopping_mall', 'department_store',
+      'insurance_agency', 'finance', 'real_estate_agency'
+    ];
+
+    for (const excludedType of excludedTypes) {
+      if (types.includes(excludedType)) {
+        console.log(`❌ Filtered out: has excluded place type "${excludedType}"`);
+        return false;
+      }
+    }
+    console.log(`✅ Passed place type filter`);
+
+    // Check if name or types suggest it's relevant (name already defined above)
     
     // More comprehensive sport keywords
     const allSportKeywords = [
@@ -239,7 +290,7 @@ class GooglePlacesService {
   transformToCourtData(placeDetails, sportType) {
     return {
       name: placeDetails.name,
-      sport_type: sportType,
+      sport_types: [sportType], // Convert to array format
       address: placeDetails.formatted_address,
       latitude: placeDetails.geometry?.location?.lat,
       longitude: placeDetails.geometry?.location?.lng,
