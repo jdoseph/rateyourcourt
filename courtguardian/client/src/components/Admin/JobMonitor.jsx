@@ -17,27 +17,33 @@ export default function JobMonitor() {
   const fetchJobStatus = async () => {
     try {
       const token = getToken();
+      console.log('🔄 Fetching job status from:', `${API_BASE_URL}/admin/jobs/status`);
+      
       const response = await fetch(`${API_BASE_URL}/admin/jobs/status`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(10000)
       });
+
+      console.log('📊 Job status response:', response.status, response.statusText);
 
       if (!response.ok) {
         if (response.status === 404) {
-          // Job monitoring endpoints might not exist yet
+          console.warn('⚠️ Job monitoring endpoints not found (404)');
           setJobStatus({ queue: { waiting: 0, active: 0, completed: 0, failed: 0 }, scheduler: { running: false } });
           return;
         }
         throw new Error(`Failed to fetch job status: ${response.status}`);
       }
+      
       const data = await response.json();
+      console.log('✅ Job status data received:', data);
       setJobStatus(data);
     } catch (err) {
-      console.error('Error fetching job status:', err);
+      console.error('❌ Error fetching job status:', err.name, err.message);
       // Set default status instead of blocking the UI
       setJobStatus({ queue: { waiting: 0, active: 0, completed: 0, failed: 0 }, scheduler: { running: false } });
     }
@@ -46,27 +52,33 @@ export default function JobMonitor() {
   const fetchRecentJobs = async () => {
     try {
       const token = getToken();
+      console.log('🔄 Fetching recent jobs from:', `${API_BASE_URL}/admin/jobs/recent`);
+      
       const response = await fetch(`${API_BASE_URL}/admin/jobs/recent`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         // Add timeout to prevent hanging  
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(10000)
       });
+
+      console.log('📋 Recent jobs response:', response.status, response.statusText);
 
       if (!response.ok) {
         if (response.status === 404) {
-          // Job monitoring endpoints might not exist yet
+          console.warn('⚠️ Recent jobs endpoint not found (404)');
           setRecentJobs([]);
           return;
         }
         throw new Error(`Failed to fetch recent jobs: ${response.status}`);
       }
+      
       const data = await response.json();
+      console.log('✅ Recent jobs data received:', data.jobs?.length || 0, 'jobs');
       setRecentJobs(data.jobs || []);
     } catch (err) {
-      console.error('Error fetching recent jobs:', err);
+      console.error('❌ Error fetching recent jobs:', err.name, err.message);
       // Set empty array instead of blocking the UI
       setRecentJobs([]);
     }
@@ -149,13 +161,14 @@ export default function JobMonitor() {
 
     loadData();
 
-    // Auto-refresh every 30 seconds now that Redis is working
-    const interval = setInterval(() => {
-      fetchJobStatus();
-      fetchRecentJobs();
-    }, 30000);
+    // Temporarily disable auto-refresh while debugging timeout issues
+    // TODO: Re-enable once backend timeout fixes are working
+    // const interval = setInterval(() => {
+    //   fetchJobStatus();
+    //   fetchRecentJobs();
+    // }, 30000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   const formatDate = (timestamp) => {

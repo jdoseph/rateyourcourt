@@ -17,24 +17,49 @@ router.use(requireAdmin);
 // Get job queue status and statistics
 router.get('/status', async (req, res) => {
   try {
-    const [waiting, active, completed, failed, delayed] = await Promise.all([
-      courtDiscoveryQueue.getWaiting(),
-      courtDiscoveryQueue.getActive(),
-      courtDiscoveryQueue.getCompleted(),
-      courtDiscoveryQueue.getFailed(),
-      courtDiscoveryQueue.getDelayed()
-    ]);
+    // Add timeout wrapper for Redis queries
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Redis query timeout')), 5000);
+    });
 
+    const getQueueStats = async () => {
+      try {
+        const [waiting, active, completed, failed, delayed] = await Promise.race([
+          Promise.all([
+            courtDiscoveryQueue.getWaiting(),
+            courtDiscoveryQueue.getActive(),
+            courtDiscoveryQueue.getCompleted(),
+            courtDiscoveryQueue.getFailed(),
+            courtDiscoveryQueue.getDelayed()
+          ]),
+          timeoutPromise
+        ]);
+
+        return {
+          waiting: waiting.length,
+          active: active.length,
+          completed: completed.length,
+          failed: failed.length,
+          delayed: delayed.length
+        };
+      } catch (error) {
+        console.warn('Redis queue query failed, returning defaults:', error.message);
+        // Return default values if Redis queries fail
+        return {
+          waiting: 0,
+          active: 0,
+          completed: 0,
+          failed: 0,
+          delayed: 0
+        };
+      }
+    };
+
+    const queueStats = await getQueueStats();
     const schedulerStatus = scheduler.getStatus();
 
     res.json({
-      queue: {
-        waiting: waiting.length,
-        active: active.length,
-        completed: completed.length,
-        failed: failed.length,
-        delayed: delayed.length
-      },
+      queue: queueStats,
       scheduler: schedulerStatus,
       uptime: process.uptime(),
       memory: process.memoryUsage()
@@ -50,27 +75,58 @@ router.get('/recent', async (req, res) => {
   try {
     const { limit = 20, status = 'all' } = req.query;
 
-    let jobs = [];
-    
-    if (status === 'all' || status === 'completed') {
-      const completed = await courtDiscoveryQueue.getCompleted(0, parseInt(limit));
-      jobs.push(...completed.map(job => ({ ...job, status: 'completed' })));
-    }
-    
-    if (status === 'all' || status === 'failed') {
-      const failed = await courtDiscoveryQueue.getFailed(0, parseInt(limit));
-      jobs.push(...failed.map(job => ({ ...job, status: 'failed' })));
-    }
-    
-    if (status === 'all' || status === 'active') {
-      const active = await courtDiscoveryQueue.getActive(0, parseInt(limit));
-      jobs.push(...active.map(job => ({ ...job, status: 'active' })));
-    }
-    
-    if (status === 'all' || status === 'waiting') {
-      const waiting = await courtDiscoveryQueue.getWaiting(0, parseInt(limit));
-      jobs.push(...waiting.map(job => ({ ...job, status: 'waiting' })));
-    }
+    // Add timeout wrapper for Redis queries
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Redis query timeout')), 5000);
+    });
+
+    const getRecentJobs = async () => {
+      try {
+        let jobs = [];
+        
+        const queries = [];
+        
+        if (status === 'all' || status === 'completed') {
+          queries.push(courtDiscoveryQueue.getCompleted(0, parseInt(limit)));
+        }
+        if (status === 'all' || status === 'failed') {
+          queries.push(courtDiscoveryQueue.getFailed(0, parseInt(limit)));
+        }
+        if (status === 'all' || status === 'active') {
+          queries.push(courtDiscoveryQueue.getActive(0, parseInt(limit)));
+        }
+        if (status === 'all' || status === 'waiting') {
+          queries.push(courtDiscoveryQueue.getWaiting(0, parseInt(limit)));
+        }
+
+        const results = await Promise.race([
+          Promise.all(queries),
+          timeoutPromise
+        ]);
+
+        // Process results
+        let index = 0;
+        if (status === 'all' || status === 'completed') {
+          jobs.push(...results[index++].map(job => ({ ...job, status: 'completed' })));
+        }
+        if (status === 'all' || status === 'failed') {
+          jobs.push(...results[index++].map(job => ({ ...job, status: 'failed' })));
+        }
+        if (status === 'all' || status === 'active') {
+          jobs.push(...results[index++].map(job => ({ ...job, status: 'active' })));
+        }
+        if (status === 'all' || status === 'waiting') {
+          jobs.push(...results[index++].map(job => ({ ...job, status: 'waiting' })));
+        }
+
+        return jobs;
+      } catch (error) {
+        console.warn('Redis job query failed, returning empty array:', error.message);
+        return [];
+      }
+    };
+
+    let jobs = await getRecentJobs();
 
     // Sort by timestamp (most recent first)
     jobs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
