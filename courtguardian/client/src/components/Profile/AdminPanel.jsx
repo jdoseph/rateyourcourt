@@ -352,14 +352,31 @@ export default function AdminPanel({ user }) {
           type: 'success'
         });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to review verification');
+        let errorMessage = 'Failed to review verification';
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // If we can't parse the error response, use status-based message
+          if (response.status === 500) {
+            errorMessage = 'Server error occurred. Please try again later or contact support.';
+          } else if (response.status === 404) {
+            errorMessage = 'Verification not found. It may have already been processed.';
+          } else if (response.status === 403) {
+            errorMessage = 'Permission denied. Please check your admin privileges.';
+          } else {
+            errorMessage = `Server returned error ${response.status}`;
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error reviewing verification:', error);
       setToast({
         show: true,
-        message: 'Failed to review verification',
+        message: error.message || 'Failed to review verification',
         type: 'error'
       });
     } finally {
