@@ -240,6 +240,10 @@ export const optimizeTouchInteractions = () => {
     /* PWA Touch Optimizations */
     * {
       -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Only disable selection on interactive elements, not globally */
+    button, [role="button"], .btn, a, .no-select {
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       -khtml-user-select: none;

@@ -33,31 +33,42 @@ function App() {
   // Load user profile on app start if token exists
   useEffect(() => {
     const loadUserProfile = async () => {
-      const token = getToken();
-      if (token) {
-        try {
-          const data = await getUserProfile();
-          if (!data.error && data.user) {
-            setUser(data.user);
-          } else {
-            // Token might be expired or invalid, remove it
-            console.warn('Failed to load user profile, removing token');
+      try {
+        console.log('Starting app initialization...');
+        const token = getToken();
+        if (token) {
+          try {
+            const data = await getUserProfile();
+            if (!data.error && data.user) {
+              setUser(data.user);
+              console.log('User profile loaded successfully');
+            } else {
+              // Token might be expired or invalid, remove it
+              console.warn('Failed to load user profile, removing token');
+              localStorage.removeItem('token');
+            }
+          } catch (error) {
+            console.error('Error loading user profile:', error);
+            // Remove potentially invalid token
             localStorage.removeItem('token');
           }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-          // Remove potentially invalid token
-          localStorage.removeItem('token');
         }
+        
+        // Initialize PWA features
+        console.log('Initializing PWA features...');
+        initializePWA();
+        console.log('PWA features initialized');
+        
+      } catch (error) {
+        console.error('Critical error during app initialization:', error);
+      } finally {
+        // Always set loading to false after attempting to load
+        setAuthLoading(false);
+        console.log('App initialization complete');
       }
-      // Always set loading to false after attempting to load
-      setAuthLoading(false);
     };
 
     loadUserProfile();
-    
-    // Initialize PWA features
-    initializePWA();
   }, []); // Remove user dependency to prevent re-runs
 
   return (
