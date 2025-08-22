@@ -4,7 +4,7 @@ const pool = require('../db');
 async function getUserReviews(userId) {
   const result = await pool.query(
     `SELECT r.id, r.rating, r.comment, r.created_at, r.court_id,
-            c.name as court_name, c.sport_type
+            c.name as court_name, c.sport_types
      FROM reviews r 
      JOIN courts c ON r.court_id = c.id
      WHERE r.user_id = $1 
@@ -18,7 +18,7 @@ async function getUserReviews(userId) {
 async function getReviewByIdAndUser(reviewId, userId) {
   const result = await pool.query(
     `SELECT r.id, r.rating, r.comment, r.created_at, r.court_id,
-            c.name as court_name, c.sport_type
+            c.name as court_name, c.sport_types
      FROM reviews r 
      JOIN courts c ON r.court_id = c.id
      WHERE r.id = $1 AND r.user_id = $2`,

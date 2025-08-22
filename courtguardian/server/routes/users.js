@@ -172,7 +172,7 @@ router.get('/reviews', authenticateToken, async (req, res) => {
 router.put('/reviews/:reviewId', authenticateToken, async (req, res) => {
   try {
     const { rating, comment } = req.body;
-    const reviewId = parseInt(req.params.reviewId);
+    const reviewId = req.params.reviewId;
     
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Rating must be between 1 and 5' });
