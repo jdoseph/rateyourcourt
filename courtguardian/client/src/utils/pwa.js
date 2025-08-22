@@ -30,7 +30,6 @@ class PWAInstallManager {
   init() {
     // Listen for beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('PWA install prompt available');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Stash the event so it can be triggered later
@@ -41,7 +40,6 @@ class PWAInstallManager {
     
     // Listen for app installation
     window.addEventListener('appinstalled', () => {
-      console.log('PWA was installed');
       this.deferredPrompt = null;
       this.isInstallable = false;
       this.notifyListeners('installed', true);
@@ -105,13 +103,11 @@ class OfflineManager {
     window.addEventListener('online', () => {
       this.isOnline = true;
       this.notifyListeners('online', true);
-      console.log('App is back online');
     });
     
     window.addEventListener('offline', () => {
       this.isOnline = false;
       this.notifyListeners('offline', true);
-      console.log('App is offline');
     });
   }
   
@@ -199,7 +195,6 @@ class PushNotificationManager {
         // applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
       });
       
-      console.log('Push subscription created:', subscription);
       return subscription;
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
@@ -324,8 +319,6 @@ export const optimizeTouchInteractions = () => {
 // Initialize PWA features
 export const initializePWA = () => {
   try {
-    console.log('Initializing PWA features...');
-    
     // Optimize touch interactions (safe for all platforms)
     optimizeTouchInteractions();
     
@@ -349,11 +342,8 @@ export const initializePWA = () => {
       } catch (error) {
         console.warn('Push notification manager failed to initialize:', error);
       }
-    } else {
-      console.log('Push notifications not supported on this platform');
     }
     
-    console.log('PWA features initialized successfully');
   } catch (error) {
     console.error('Critical error initializing PWA features:', error);
     // Don't let PWA failures break the entire app

@@ -34,14 +34,12 @@ function App() {
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        console.log('Starting app initialization...');
         const token = getToken();
         if (token) {
           try {
             const data = await getUserProfile();
             if (!data.error && data.user) {
               setUser(data.user);
-              console.log('User profile loaded successfully');
             } else {
               // Token might be expired or invalid, remove it
               console.warn('Failed to load user profile, removing token');
@@ -55,16 +53,13 @@ function App() {
         }
         
         // Initialize PWA features
-        console.log('Initializing PWA features...');
         initializePWA();
-        console.log('PWA features initialized');
         
       } catch (error) {
         console.error('Critical error during app initialization:', error);
       } finally {
         // Always set loading to false after attempting to load
         setAuthLoading(false);
-        console.log('App initialization complete');
       }
     };
 
@@ -78,11 +73,11 @@ function App() {
           <nav
             className="app-nav py-3 rounded-4 d-flex align-items-center justify-content-between flex-nowrap"
           >
-            <Link className="flex-shrink-0" to="/" style={{marginLeft:'1.5rem'}}>
+            <Link className="icon-logo-navbar flex-shrink-0" to="/">
               <img src="/icon-logo.svg" alt="RYC logo" className="app-logo" />
             </Link>
             
-            <div className="d-flex align-items-center flex-shrink-0" style={{marginRight:'1.5rem'}}>
+            <div className="buttons-navbar d-flex align-items-center flex-shrink-0">
               {authLoading ? (
                 <div className="d-flex align-items-center">
                   <div className="spinner-border spinner-border-sm text-primary" role="status">
