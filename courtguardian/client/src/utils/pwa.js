@@ -95,19 +95,33 @@ class OfflineManager {
   constructor() {
     this.isOnline = navigator.onLine;
     this.listeners = [];
+    this.offlineTimeout = null;
+    this.offlineDelay = 2000; // 2 second delay before showing offline
     
     this.init();
   }
   
   init() {
     window.addEventListener('online', () => {
+      // Clear any pending offline notification
+      if (this.offlineTimeout) {
+        clearTimeout(this.offlineTimeout);
+        this.offlineTimeout = null;
+      }
+      
       this.isOnline = true;
       this.notifyListeners('online', true);
     });
     
     window.addEventListener('offline', () => {
-      this.isOnline = false;
-      this.notifyListeners('offline', true);
+      // Add delay to prevent false positives during page navigation
+      this.offlineTimeout = setTimeout(() => {
+        // Double-check we're still offline
+        if (!navigator.onLine) {
+          this.isOnline = false;
+          this.notifyListeners('offline', true);
+        }
+      }, this.offlineDelay);
     });
   }
   
