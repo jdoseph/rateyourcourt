@@ -9,12 +9,24 @@ const pool = new Pool({
 });
 
 // Create Bull queue for court discovery jobs
-const courtDiscoveryQueue = new Queue('court discovery', {
-  redis: process.env.REDIS_URL || {
+// Configure Redis connection for Bull queue
+let redisConfig;
+if (process.env.REDIS_URL) {
+  // Use Redis URL for Bull queue
+  console.log('🔧 Using REDIS_URL for Bull queue connection');
+  redisConfig = process.env.REDIS_URL;
+} else {
+  // Fallback to individual config
+  console.log('🔧 Using individual Redis config for Bull queue');
+  redisConfig = {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379,
     password: process.env.REDIS_PASSWORD || undefined
-  },
+  };
+}
+
+const courtDiscoveryQueue = new Queue('court discovery', {
+  redis: redisConfig,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
