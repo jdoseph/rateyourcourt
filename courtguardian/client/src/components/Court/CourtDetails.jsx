@@ -681,6 +681,16 @@ export default function CourtDetails({ courtId, user }) {
 
           <div className="court-stats-grid">
             <div className="court-stats-card">
+              <div className="court-stats-icon">🏆</div>
+              <div className="court-stats-label">Sport Types</div>
+              <div className="court-stats-value">
+                {court.sport_types && court.sport_types.length > 0 
+                  ? court.sport_types.join(', ') 
+                  : 'Unknown'}
+              </div>
+            </div>
+
+            <div className="court-stats-card">
               <div className="court-stats-icon">🏟️</div>
               <div className="court-stats-label">Surface Type</div>
               <div className="court-stats-value">{court.surface_type || 'Unknown'}</div>

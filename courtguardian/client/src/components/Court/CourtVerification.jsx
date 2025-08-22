@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getToken } from '../../api';
 import { API_BASE_URL } from '../../constants';
 
+const AVAILABLE_SPORTS = ['Tennis', 'Pickleball', 'Basketball', 'Volleyball', 'Badminton', 'Padel'];
+
 export default function CourtVerification({ courtId, court, onVerificationSubmitted, onShowToast }) {
   const [verificationData, setVerificationData] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -44,11 +46,29 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
       return;
     }
 
-    if (!selectedField || !formData.newValue.trim()) {
+    if (!selectedField || (!formData.newValue.trim() && selectedField !== 'sport_types')) {
       if (onShowToast) {
         onShowToast({ show: true, message: 'Please select a field and provide a value', type: 'error' });
       }
       return;
+    }
+
+    // Special validation for sport_types
+    if (selectedField === 'sport_types') {
+      try {
+        const selectedSports = JSON.parse(formData.newValue || '[]');
+        if (!Array.isArray(selectedSports) || selectedSports.length === 0) {
+          if (onShowToast) {
+            onShowToast({ show: true, message: 'Please select at least one sport type', type: 'error' });
+          }
+          return;
+        }
+      } catch {
+        if (onShowToast) {
+          onShowToast({ show: true, message: 'Invalid sport types selection', type: 'error' });
+        }
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -116,6 +136,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
       case 'opening_hours': return court?.opening_hours;
       case 'address': return court?.address;
       case 'name': return court?.name;
+      case 'sport_types': return court?.sport_types;
       default: return null;
     }
   };
@@ -136,7 +157,8 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
       'website_url': 'Website',
       'opening_hours': 'Opening Hours',
       'address': 'Address',
-      'name': 'Court Name'
+      'name': 'Court Name',
+      'sport_types': 'Sport Types'
     };
     return names[fieldName] || fieldName;
   };
@@ -311,11 +333,11 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
                   ))}
                 </optgroup>
                 <optgroup label="Verify Existing Information">
-                  {['surface_type', 'court_count', 'lighting', 'phone_number', 'website_url', 'opening_hours', 'address', 'name']
+                  {['surface_type', 'court_count', 'lighting', 'phone_number', 'website_url', 'opening_hours', 'address', 'name', 'sport_types']
                     .filter(field => !missingFields.includes(field))
                     .map(field => (
                       <option key={field} value={field}>
-                        {getFieldDisplayName(field)} (Current: {String(getFieldValue(field))})
+                        {getFieldDisplayName(field)} (Current: {field === 'sport_types' && Array.isArray(getFieldValue(field)) ? getFieldValue(field).join(', ') : String(getFieldValue(field))})
                       </option>
                     ))}
                 </optgroup>
@@ -438,6 +460,94 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
                     onFocus={(e) => e.target.style.borderColor = '#10b981'}
                     onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
                   />
+                ) : selectedField === 'sport_types' ? (
+                  <div>
+                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
+                      Select all sports available at this court. Multiple sports can be selected.
+                    </p>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                      gap: '0.75rem',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '1rem',
+                      backgroundColor: '#f9fafb'
+                    }}>
+                      {AVAILABLE_SPORTS.map(sport => {
+                        const currentSports = getFieldValue('sport_types') || [];
+                        let selectedSports = [];
+                        
+                        try {
+                          selectedSports = formData.newValue ? JSON.parse(formData.newValue) : currentSports;
+                        } catch {
+                          selectedSports = currentSports;
+                        }
+                        
+                        const isSelected = selectedSports.includes(sport);
+                        
+                        return (
+                          <label
+                            key={sport}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.75rem',
+                              backgroundColor: isSelected ? '#dbeafe' : 'white',
+                              border: '1px solid' + (isSelected ? '#3b82f6' : '#d1d5db'),
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              fontSize: '0.875rem',
+                              fontWeight: '500'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isSelected) {
+                                e.target.style.backgroundColor = '#f3f4f6';
+                                e.target.style.borderColor = '#9ca3af';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isSelected) {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.borderColor = '#d1d5db';
+                              }
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const currentSelected = [...selectedSports];
+                                if (e.target.checked) {
+                                  if (!currentSelected.includes(sport)) {
+                                    currentSelected.push(sport);
+                                  }
+                                } else {
+                                  const index = currentSelected.indexOf(sport);
+                                  if (index > -1) {
+                                    currentSelected.splice(index, 1);
+                                  }
+                                }
+                                setFormData({ ...formData, newValue: JSON.stringify(currentSelected) });
+                              }}
+                              style={{
+                                margin: 0,
+                                accentColor: '#10b981'
+                              }}
+                            />
+                            <span style={{ 
+                              color: isSelected ? '#1f2937' : '#6b7280',
+                              fontWeight: isSelected ? '600' : '500'
+                            }}>
+                              {sport}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ) : selectedField === 'opening_hours' ? (
                   <textarea
                     value={formData.newValue}

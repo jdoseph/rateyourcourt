@@ -12,7 +12,7 @@ router.get('/court/:courtId', async (req, res) => {
     // Get court data with verification info
     const courtQuery = `
       SELECT 
-        id, name, address, sport_type, surface_type, court_count, 
+        id, name, address, sport_types, surface_type, court_count, 
         lighting, phone_number, website_url, opening_hours, 
         verification_status, verification_count, last_verified_at,
         google_rating, google_total_ratings
@@ -103,7 +103,7 @@ router.post('/submit', authenticateToken, async (req, res) => {
     // Validate field name
     const validFields = [
       'surface_type', 'court_count', 'lighting', 'phone_number', 
-      'website_url', 'opening_hours', 'address', 'name'
+      'website_url', 'opening_hours', 'address', 'name', 'sport_types'
     ];
     if (!validFields.includes(fieldName)) {
       return res.status(400).json({ 
@@ -242,6 +242,9 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [verification.new_value === 'true' || verification.new_value === true, verification.court_id];
         } else if (verification.field_name === 'opening_hours') {
+          updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
+          updateValues = [JSON.parse(verification.new_value), verification.court_id];
+        } else if (verification.field_name === 'sport_types') {
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [JSON.parse(verification.new_value), verification.court_id];
         } else {
