@@ -33,18 +33,20 @@ export default function Profile({ user, onUserUpdate }) {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsEditing(false);
       setToast({
         show: true,
-        message: 'Basic Information saved successfully!',
+        message: 'Basic Information was saved successfully.',
         type: 'success'
       });
-      setIsEditing(false);
+
     } catch (error) {
       setToast({
         show: true,
         message: 'Failed to update profile. Please try again.',
         type: 'danger'
       });
+      
     } finally {
       setLoading(false);
     }
@@ -71,13 +73,13 @@ export default function Profile({ user, onUserUpdate }) {
         setMessage({ type: 'error', text: result.error });
         return;
       }
-      setToast({
-        show: true,
-        message: 'Avatar color saved successfully!',
-        type: 'success'
-      });
       if (onUserUpdate && result.user) {
         onUserUpdate(result.user);
+        setToast({
+          show: true,
+          message: 'Avatar color saved successfully!',
+          type: 'success'
+        });
       }
     } catch (error) {
       setToast({

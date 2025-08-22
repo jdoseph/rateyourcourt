@@ -139,6 +139,7 @@ export default function AvatarColorPicker({ user, onColorChange, disabled = fals
                 <div className="preset-colors-grid">
                   {presetCombinations.map((preset, index) => (
                     <button
+                      type="button"
                       key={index}
                       className={`preset-color-btn ${
                         tempColors.start === preset.start && tempColors.end === preset.end ? 'active' : ''
@@ -157,6 +158,7 @@ export default function AvatarColorPicker({ user, onColorChange, disabled = fals
                   
                   {/* Custom Preset */}
                   <button
+                    type="button"
                     className={`preset-color-btn ${
                       hasCustomColors() && (tempColors.start === customPreset.start && tempColors.end === customPreset.end) ? 'active' : ''
                     }`}
