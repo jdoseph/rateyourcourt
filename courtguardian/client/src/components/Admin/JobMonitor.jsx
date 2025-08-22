@@ -21,7 +21,9 @@ export default function JobMonitor() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(5000)
       });
 
       if (!response.ok) {
@@ -48,7 +50,9 @@ export default function JobMonitor() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        // Add timeout to prevent hanging  
+        signal: AbortSignal.timeout(5000)
       });
 
       if (!response.ok) {
@@ -125,12 +129,20 @@ export default function JobMonitor() {
     const loadData = async () => {
       setLoading(true);
       setError(null);
+      
+      // Always set loading to false after a maximum of 3 seconds
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 3000);
+      
       try {
+        // Try to load data but don't block the UI if it fails
         await Promise.all([fetchJobStatus(), fetchRecentJobs()]);
       } catch (err) {
         console.error('Error loading job monitor data:', err);
-        setError('Failed to load job data');
+        // Don't set error state - just show empty data instead
       } finally {
+        clearTimeout(timeout);
         setLoading(false);
       }
     };
