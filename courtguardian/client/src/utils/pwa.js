@@ -143,7 +143,7 @@ export const offlineManager = new OfflineManager();
 class PushNotificationManager {
   constructor() {
     this.registration = null;
-    this.permission = Notification.permission;
+    this.permission = typeof Notification !== 'undefined' ? Notification.permission : 'denied';
   }
   
   // Initialize push notifications
@@ -323,13 +323,39 @@ export const optimizeTouchInteractions = () => {
 
 // Initialize PWA features
 export const initializePWA = () => {
-  // Optimize touch interactions
-  optimizeTouchInteractions();
-  
-  // Initialize managers
-  pwaInstallManager.init();
-  offlineManager.init();
-  pushNotificationManager.init();
-  
-  console.log('PWA features initialized');
+  try {
+    console.log('Initializing PWA features...');
+    
+    // Optimize touch interactions (safe for all platforms)
+    optimizeTouchInteractions();
+    
+    // Initialize managers with proper error handling
+    try {
+      pwaInstallManager.init();
+    } catch (error) {
+      console.warn('PWA install manager failed to initialize:', error);
+    }
+    
+    try {
+      offlineManager.init();
+    } catch (error) {
+      console.warn('Offline manager failed to initialize:', error);
+    }
+    
+    // Only initialize push notifications if supported
+    if ('Notification' in window && 'serviceWorker' in navigator) {
+      try {
+        pushNotificationManager.init();
+      } catch (error) {
+        console.warn('Push notification manager failed to initialize:', error);
+      }
+    } else {
+      console.log('Push notifications not supported on this platform');
+    }
+    
+    console.log('PWA features initialized successfully');
+  } catch (error) {
+    console.error('Critical error initializing PWA features:', error);
+    // Don't let PWA failures break the entire app
+  }
 };
