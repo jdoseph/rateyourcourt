@@ -137,13 +137,14 @@ export default function JobMonitor() {
 
     loadData();
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchJobStatus();
-      fetchRecentJobs();
-    }, 30000);
+    // Disable auto-refresh to prevent backend crashes due to Redis issues
+    // TODO: Re-enable once Redis is properly configured
+    // const interval = setInterval(() => {
+    //   fetchJobStatus();
+    //   fetchRecentJobs();
+    // }, 30000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   const formatDate = (timestamp) => {
