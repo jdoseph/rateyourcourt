@@ -110,6 +110,10 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
         if (onVerificationSubmitted) {
           onVerificationSubmitted();
         }
+
+        if (onShowToast) {
+          onShowToast({ show: true, message: 'Verification submitted successfully!', type: 'success' });
+        }
       } else {
         if (onShowToast) {
           onShowToast({ show: true, message: result.error || 'Failed to submit verification', type: 'error' });

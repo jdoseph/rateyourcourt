@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AvatarColorPicker from './AvatarColorPicker';
+import Toast from '../Toast/Toast';
 import { updateAvatarColors } from '../../api';
 import '../../App.css';
 
@@ -15,6 +16,8 @@ export default function Profile({ user, onUserUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
 
   const handleChange = (e) => {
     setFormData({
@@ -29,12 +32,19 @@ export default function Profile({ user, onUserUpdate }) {
     setMessage(null);
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setToast({
+        show: true,
+        message: 'Basic Information saved successfully!',
+        type: 'success'
+      });
       setIsEditing(false);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
+      setToast({
+        show: true,
+        message: 'Failed to update profile. Please try again.',
+        type: 'danger'
+      });
     } finally {
       setLoading(false);
     }
@@ -55,29 +65,33 @@ export default function Profile({ user, onUserUpdate }) {
 
   const handleAvatarColorChange = async (colors) => {
     try {
-      // Call the real API
       const result = await updateAvatarColors(colors);
-      
+
       if (result.error) {
         setMessage({ type: 'error', text: result.error });
         return;
       }
-      
-      setMessage({ type: 'success', text: 'Avatar colors updated successfully!' });
-      
-      // Update the user object in the parent component
+      setToast({
+        show: true,
+        message: 'Avatar color saved successfully!',
+        type: 'success'
+      });
       if (onUserUpdate && result.user) {
         onUserUpdate(result.user);
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update avatar colors. Please try again.' });
+      setToast({
+        show: true,
+        message: 'Failed to update avatar colors. Please try again.',
+        type: 'danger'
+      });
     }
   };
 
   return (
     <div>
       <h2 className="profile-section-title">Profile Information</h2>
-      
+
       {message && (
         <div className={`alert-${message.type}`}>
           {message.text}
@@ -87,8 +101,8 @@ export default function Profile({ user, onUserUpdate }) {
       <form onSubmit={handleSubmit} className="settings-form">
         <div className="settings-section">
           <h3 className="settings-section-title">Avatar Customization</h3>
-          
-          <AvatarColorPicker 
+
+          <AvatarColorPicker
             user={user}
             onColorChange={handleAvatarColorChange}
           />
@@ -96,7 +110,7 @@ export default function Profile({ user, onUserUpdate }) {
 
         <div className="settings-section">
           <h3 className="settings-section-title">Basic Information</h3>
-          
+
           <div className="settings-row">
             <div className="form-group">
               <label className="form-label">Username</label>
@@ -194,8 +208,8 @@ export default function Profile({ user, onUserUpdate }) {
               onClick={handleCancel}
               className="form-button"
               disabled={loading}
-              style={{ 
-                width: 'auto', 
+              style={{
+                width: 'auto',
                 flex: 1,
                 background: '#6b7280',
                 marginTop: '1rem'
@@ -215,6 +229,12 @@ export default function Profile({ user, onUserUpdate }) {
           </button>
         )}
       </form>
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast({ ...toast, show: false })}
+      />
     </div>
   );
 }

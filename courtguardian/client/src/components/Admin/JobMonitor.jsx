@@ -23,7 +23,7 @@ export default function JobMonitor() {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch job status');
       const data = await response.json();
       setJobStatus(data);
@@ -41,7 +41,7 @@ export default function JobMonitor() {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch recent jobs');
       const data = await response.json();
       setRecentJobs(data.jobs);
@@ -61,12 +61,12 @@ export default function JobMonitor() {
         },
         body: JSON.stringify(manualJob)
       });
-      
+
       if (!response.ok) throw new Error('Failed to trigger discovery job');
       const data = await response.json();
-      
+
       alert(`Discovery job triggered successfully! Job ID: ${data.jobId}`);
-      
+
       // Reset form and refresh data
       setManualJob({
         latitude: '',
@@ -74,7 +74,7 @@ export default function JobMonitor() {
         radius: 10000,
         sportType: 'Tennis'
       });
-      
+
       fetchJobStatus();
       fetchRecentJobs();
     } catch (err) {
@@ -92,10 +92,10 @@ export default function JobMonitor() {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) throw new Error(`Failed to ${action} scheduler`);
       const data = await response.json();
-      
+
       alert(data.message);
       fetchJobStatus();
     } catch (err) {
@@ -108,10 +108,17 @@ export default function JobMonitor() {
       setLoading(true);
       await Promise.all([fetchJobStatus(), fetchRecentJobs()]);
       setLoading(false);
+      try {
+        await Promise.all([fetchJobStatus(), fetchRecentJobs()]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadData();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchJobStatus();
@@ -164,6 +171,7 @@ export default function JobMonitor() {
           <div className="queue-stat-item">
             <div className="queue-stat-number queue-stat-waiting">
               {jobStatus?.queue.waiting || 0}
+              {jobStatus?.scheduler?.running ? 'Running' : 'Stopped'}
             </div>
             <div className="queue-stat-label">Waiting</div>
           </div>
@@ -192,16 +200,14 @@ export default function JobMonitor() {
       <div className="job-monitor-card">
         <h4 className="job-monitor-card-title">Scheduler Control</h4>
         <div className="scheduler-controls">
-          <span className={`scheduler-status-badge ${
-            jobStatus?.scheduler.running ? 'scheduler-status-running' : 'scheduler-status-stopped'
-          }`}>
+          <span className={`scheduler-status-badge ${jobStatus?.scheduler.running ? 'scheduler-status-running' : 'scheduler-status-stopped'
+            }`}>
             {jobStatus?.scheduler.running ? 'Running' : 'Stopped'}
           </span>
           <button
             onClick={() => controlScheduler(jobStatus?.scheduler.running ? 'stop' : 'start')}
-            className={`scheduler-control-button ${
-              jobStatus?.scheduler.running ? 'scheduler-button-stop' : 'scheduler-button-start'
-            }`}
+            className={`scheduler-control-button ${jobStatus?.scheduler.running ? 'scheduler-button-stop' : 'scheduler-button-start'
+              }`}
           >
             {jobStatus?.scheduler.running ? 'Stop Scheduler' : 'Start Scheduler'}
           </button>
@@ -220,7 +226,7 @@ export default function JobMonitor() {
               type="number"
               step="any"
               value={manualJob.latitude}
-              onChange={(e) => setManualJob({...manualJob, latitude: e.target.value})}
+              onChange={(e) => setManualJob({ ...manualJob, latitude: e.target.value })}
               className="form-input-job"
               placeholder="33.7490"
             />
@@ -233,7 +239,7 @@ export default function JobMonitor() {
               type="number"
               step="any"
               value={manualJob.longitude}
-              onChange={(e) => setManualJob({...manualJob, longitude: e.target.value})}
+              onChange={(e) => setManualJob({ ...manualJob, longitude: e.target.value })}
               className="form-input-job"
               placeholder="-84.3880"
             />
@@ -245,7 +251,7 @@ export default function JobMonitor() {
             <input
               type="number"
               value={manualJob.radius}
-              onChange={(e) => setManualJob({...manualJob, radius: parseInt(e.target.value) || 10000})}
+              onChange={(e) => setManualJob({ ...manualJob, radius: parseInt(e.target.value) || 10000 })}
               className="form-input-job"
             />
           </div>
@@ -255,7 +261,7 @@ export default function JobMonitor() {
             </label>
             <select
               value={manualJob.sportType}
-              onChange={(e) => setManualJob({...manualJob, sportType: e.target.value})}
+              onChange={(e) => setManualJob({ ...manualJob, sportType: e.target.value })}
               className="form-input-job"
             >
               <option value="Tennis">Tennis</option>
@@ -267,9 +273,8 @@ export default function JobMonitor() {
         <button
           onClick={triggerDiscoveryJob}
           disabled={!manualJob.latitude || !manualJob.longitude}
-          className={`trigger-job-button ${
-            (!manualJob.latitude || !manualJob.longitude) ? 'trigger-job-button-disabled' : 'trigger-job-button-enabled'
-          }`}
+          className={`trigger-job-button ${(!manualJob.latitude || !manualJob.longitude) ? 'trigger-job-button-disabled' : 'trigger-job-button-enabled'
+            }`}
         >
           Trigger Discovery Job
         </button>
@@ -290,7 +295,7 @@ export default function JobMonitor() {
                 <div className="job-item-header">
                   <div className="job-item-title-section">
                     <span className="job-item-id">Job #{job.id}</span>
-                    <span 
+                    <span
                       className="job-status-badge"
                       style={{
                         backgroundColor: getStatusColor(job.status) + '20',
@@ -305,12 +310,12 @@ export default function JobMonitor() {
                   </span>
                 </div>
                 <div className="job-item-details">
-                  {job.data.sportType} courts at {job.data.latitude}, {job.data.longitude} 
+                  {job.data.sportType} courts at {job.data.latitude}, {job.data.longitude}
                   (radius: {job.data.radius}m)
                 </div>
                 {job.returnvalue && (
                   <div className="job-item-results">
-                    Processed: {job.returnvalue.courts_processed} courts 
+                    Processed: {job.returnvalue.courts_processed} courts
                     ({job.returnvalue.new_courts} new, {job.returnvalue.duplicates} duplicates)
                   </div>
                 )}

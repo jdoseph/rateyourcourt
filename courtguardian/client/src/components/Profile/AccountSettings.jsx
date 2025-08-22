@@ -224,7 +224,7 @@ export default function AccountSettings({ user, onUserUpdate }) {
         </div>
 
         {/* Notification Settings */}
-        <div className="settings-section">
+        {/* <div className="settings-section">
           <h3 className="settings-section-title">Notification Preferences</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -274,7 +274,7 @@ export default function AccountSettings({ user, onUserUpdate }) {
             Save Notification Settings
           </button>
         </div>
-
+ */}
         {/* Privacy Settings */}
         <div className="settings-section">
           <h3 className="settings-section-title">Privacy Settings</h3>
