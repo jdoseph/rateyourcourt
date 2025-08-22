@@ -348,7 +348,7 @@ export default function AdminPanel({ user }) {
         
         setToast({
           show: true,
-          message: `Verification ${action}d successfully!`,
+          message: `Verification saved successfully!`,
           type: 'success'
         });
       } else {

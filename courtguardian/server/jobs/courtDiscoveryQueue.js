@@ -12,34 +12,90 @@ const pool = new Pool({
 // Configure Redis connection for Bull queue
 let redisConfig;
 if (process.env.REDIS_URL) {
-  // Use Redis URL for Bull queue
-  console.log('🔧 Using REDIS_URL for Bull queue connection');
+  console.log('🔧 Using REDIS_URL for Bull queue connection:', process.env.REDIS_URL);
   redisConfig = process.env.REDIS_URL;
 } else {
-  // Fallback to individual config
-  console.log('🔧 Using individual Redis config for Bull queue');
+  console.log('⚠️ No REDIS_URL found - job queue will not function properly');
+  // Fallback for development
   redisConfig = {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined
+    host: 'localhost',
+    port: 6379
   };
 }
 
-const courtDiscoveryQueue = new Queue('court discovery', {
-  redis: redisConfig,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
-    removeOnComplete: 50, // Keep last 50 completed jobs
-    removeOnFail: 20, // Keep last 20 failed jobs
-  }
-});
+// Create queue with connection timeout and error handling
+let courtDiscoveryQueue;
+let queueReady = false;
 
-// Job processor for court discovery
-courtDiscoveryQueue.process('discover-popular-area', async (job) => {
+try {
+  courtDiscoveryQueue = new Queue('court discovery', {
+    redis: redisConfig,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+      removeOnComplete: 50,
+      removeOnFail: 20,
+    }
+  });
+
+  // Connection event handlers
+  courtDiscoveryQueue.on('ready', () => {
+    console.log('✅ Bull queue ready and connected to Redis');
+    queueReady = true;
+  });
+
+  courtDiscoveryQueue.on('error', (error) => {
+    console.error('❌ Bull queue Redis error:', error.message);
+    queueReady = false;
+  });
+
+  courtDiscoveryQueue.on('waiting', (jobId) => {
+    console.log(`⏳ Job ${jobId} is waiting`);
+  });
+
+  courtDiscoveryQueue.on('active', (job) => {
+    console.log(`🔄 Job ${job.id} started processing`);
+  });
+
+  // Test connection after a short delay
+  setTimeout(async () => {
+    try {
+      await Promise.race([
+        courtDiscoveryQueue.getWaiting(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection test timeout')), 5000))
+      ]);
+      console.log('✅ Bull queue connection test passed');
+    } catch (error) {
+      console.warn('⚠️ Bull queue connection test failed:', error.message);
+      queueReady = false;
+    }
+  }, 2000);
+
+} catch (error) {
+  console.error('❌ Failed to initialize Bull queue:', error.message);
+  queueReady = false;
+  
+  // Create a dummy queue object to prevent errors
+  courtDiscoveryQueue = {
+    getWaiting: () => Promise.resolve([]),
+    getActive: () => Promise.resolve([]),
+    getCompleted: () => Promise.resolve([]),
+    getFailed: () => Promise.resolve([]),
+    getDelayed: () => Promise.resolve([]),
+    getJob: () => Promise.resolve(null),
+    clean: () => Promise.resolve(0),
+    add: () => Promise.resolve({ id: `mock-${Date.now()}` }),
+    process: () => {},
+    on: () => {}
+  };
+}
+
+// Job processor for court discovery (only if queue is properly initialized)
+if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
+  courtDiscoveryQueue.process('discover-popular-area', async (job) => {
   const { latitude, longitude, radius, sportType, priority = 'normal' } = job.data;
   
   console.log(`🔍 Processing discovery job for ${sportType} courts at ${latitude}, ${longitude} (radius: ${radius}m)`);
@@ -131,7 +187,10 @@ courtDiscoveryQueue.process('discover-popular-area', async (job) => {
     
     throw error; // Re-throw to mark job as failed
   }
-});
+  });
+} else {
+  console.warn('⚠️ Bull queue not properly initialized - job processing disabled');
+}
 
 // Helper functions (reusing logic from discovery.js)
 
@@ -303,12 +362,43 @@ module.exports = {
     
     const jobOptions = {
       priority: priority === 'high' ? 1 : priority === 'low' ? 10 : 5,
-      delay: priority === 'low' ? 60000 : 0, // Low priority jobs wait 1 minute
+      delay: priority === 'low' ? 60000 : 0,
     };
     
-    const job = await courtDiscoveryQueue.add('discover-popular-area', jobData, jobOptions);
-    console.log(`📋 Added discovery job ${job.id} for ${sportType} courts at ${latitude}, ${longitude}`);
+    // Check if queue is ready
+    if (!courtDiscoveryQueue || !queueReady) {
+      console.warn('⚠️ Queue not ready, returning mock job');
+      return {
+        id: `mock-${Date.now()}`,
+        data: jobData,
+        opts: jobOptions
+      };
+    }
     
-    return job;
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Job creation timeout')), 3000);
+      });
+      
+      const createJobPromise = courtDiscoveryQueue.add('discover-popular-area', jobData, jobOptions);
+      const job = await Promise.race([createJobPromise, timeoutPromise]);
+      
+      console.log(`📋 Added discovery job ${job.id} for ${sportType} courts at ${latitude}, ${longitude}`);
+      return job;
+    } catch (error) {
+      console.error(`❌ Failed to add discovery job: ${error.message}`);
+      
+      // Return mock job on any failure
+      return {
+        id: `mock-${Date.now()}`,
+        data: jobData,
+        opts: jobOptions
+      };
+    }
+  },
+
+  // Helper to check if queue is ready
+  isQueueReady() {
+    return queueReady && courtDiscoveryQueue;
   }
 };
