@@ -24,8 +24,8 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO public.courts
-      (name, address, lat, lng, surface_type, lighting, court_count, sport_types, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      (name, address, lat, lng, surface_type, lighting, court_count, sport_type, sport_types, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
      RETURNING *`,
       [
         name,
@@ -35,6 +35,7 @@ router.post('/', authenticateToken, async (req, res) => {
         surface_type || null,
         lighting === true || lighting === 'true',
         court_count ? Number(court_count) : null,
+        sport_types[0], // Set sport_type to the first sport in the array
         sport_types,
         created_by
       ]
