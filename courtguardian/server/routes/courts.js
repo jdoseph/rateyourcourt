@@ -193,10 +193,10 @@ router.get('/', async (req, res) => {
     const groupOrder = `GROUP BY c.id ORDER BY c.name LIMIT ${parseInt(limit)}`;
 
     const fullQuery = [baseSql, whereClause, groupOrder].join(' ');
-    console.log('Executing courts query:', fullQuery, 'with params:', params);
+    // console.log('Executing courts query:', fullQuery, 'with params:', params);
     const result = await pool.query(fullQuery, params);
     const executionTime = Date.now() - startTime;
-    console.log(`Courts query completed in ${executionTime}ms, returned ${result.rows.length} rows`);
+    // console.log(`Courts query completed in ${executionTime}ms, returned ${result.rows.length} rows`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /api/courts error:', err);

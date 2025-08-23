@@ -8,6 +8,7 @@ import HomePage from './components/Homepage/HomePage';
 import SearchResults from './components/Homepage/SearchResults';
 import AppUserProfile from './components/Profile/AppUserProfile';
 import UserProfile from './components/Profile/UserProfile';
+import AboutUs from './components/About/AboutUs';
 import PWAInstallBanner from './components/PWA/PWAInstallBanner';
 import OfflineIndicator from './components/PWA/OfflineIndicator';
 import { getToken, logout as logoutHelper, getUserProfile } from './api';
@@ -51,10 +52,10 @@ function App() {
             localStorage.removeItem('token');
           }
         }
-        
+
         // Initialize PWA features
         initializePWA();
-        
+
       } catch (error) {
         console.error('Critical error during app initialization:', error);
       } finally {
@@ -76,7 +77,7 @@ function App() {
             <Link className="icon-logo-navbar flex-shrink-0" to="/">
               <img src="/icon-logo.svg" alt="RYC logo" className="app-logo" />
             </Link>
-            
+
             <div className="buttons-navbar d-flex align-items-center flex-shrink-0">
               {authLoading ? (
                 <div className="d-flex align-items-center">
@@ -86,7 +87,7 @@ function App() {
                 </div>
               ) : user ? (
                 <div className='d-flex gap-2'>
-                  <AppUserProfile user={user} onLogout={handleLogout}/>
+                  <AppUserProfile user={user} onLogout={handleLogout} />
                 </div>
               ) : (
                 <div className="d-flex align-items-center gap-2">
@@ -112,6 +113,7 @@ function App() {
             <Route path="/search" element={<SearchResults />} />
             <Route path="/courts/:id" element={<CourtDetailsWrapper user={user} />} />
             <Route path="/profile" element={<UserProfile user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />} />
+            <Route path="/about" element={<AboutUs />} />
             <Route path="/courtlist" />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
@@ -134,6 +136,18 @@ function App() {
               setAuthLoading(false); // Ensure loading state is reset
             }}
           />
+
+          <footer
+            style={{
+              textAlign: 'center',
+              padding: '1rem',
+              backgroundColor: '#f9fafb',
+              color: '#6b7280',
+              fontSize: '0.9rem',
+            }}
+          >
+            Developed by <a href="https://instagram.com/jdoseph">Joseph Do</a>  © 2025
+          </footer>
 
           {/* PWA Components */}
           <OfflineIndicator />

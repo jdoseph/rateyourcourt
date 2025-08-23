@@ -5,13 +5,13 @@ export default function CallToActionSection() {
   return (
     <section className="section-card cta-section">
       <h2 className="cta-title">
-        Join the Community
+        Join the Community!
       </h2>
       <p className="cta-description">
         Help others find amazing courts and discover your next favorite place to play.
       </p>
-      <Link to="/register" className="cta-button">
-        Get Started Now
+      <Link to="/about" className="cta-button">
+        Learn More About Us
       </Link>
     </section>
   );

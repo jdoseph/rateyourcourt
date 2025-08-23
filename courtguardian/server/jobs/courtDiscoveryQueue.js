@@ -15,29 +15,6 @@ let redisConfig;
 // Check for Railway-specific Redis URLs (in order of preference)
 const redisUrl = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
 
-if (redisUrl) {
-  console.log('🔧 Using Redis URL for Bull queue connection');
-  
-  // Check if URL contains railway.internal (won't work externally)
-  if (redisUrl.includes('railway.internal')) {
-    console.log('🚨 Railway internal DNS detected - this will likely fail');
-    console.log('💡 Try using REDIS_PUBLIC_URL instead of REDIS_URL in Railway');
-    
-    // For now, disable Redis and use fallback
-    console.log('⚠️ Disabling Redis due to railway.internal DNS issue');
-    redisConfig = null;
-  } else {
-    console.log('✅ Using Redis URL:', redisUrl);
-    redisConfig = redisUrl;
-  }
-} else {
-  console.log('⚠️ No Redis URL found - using localhost fallback for development');
-  redisConfig = {
-    host: 'localhost',
-    port: 6379
-  };
-}
-
 // Create queue with connection timeout and error handling
 let courtDiscoveryQueue;
 let queueReady = false;
@@ -60,12 +37,12 @@ if (redisConfig) {
 
   // Connection event handlers
   courtDiscoveryQueue.on('ready', () => {
-    console.log('✅ Bull queue ready and connected to Redis');
+    // console.log('✅ Bull queue ready and connected to Redis');
     queueReady = true;
   });
 
   courtDiscoveryQueue.on('error', (error) => {
-    console.error('❌ Bull queue Redis error:', error.message);
+    // console.error('❌ Bull queue Redis error:', error.message);
     queueReady = false;
   });
 
@@ -84,7 +61,7 @@ if (redisConfig) {
         courtDiscoveryQueue.getWaiting(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Connection test timeout')), 5000))
       ]);
-      console.log('✅ Bull queue connection test passed');
+      // console.log('✅ Bull queue connection test passed');
     } catch (error) {
       console.warn('⚠️ Bull queue connection test failed:', error.message);
       queueReady = false;

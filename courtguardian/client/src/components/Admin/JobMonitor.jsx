@@ -48,7 +48,7 @@ export default function JobMonitor() {
   const fetchRecentJobs = async () => {
     try {
       const token = getToken();
-      console.log('🔄 Fetching recent jobs from:', `${API_BASE_URL}/admin/jobs/recent`);
+      // console.log('🔄 Fetching recent jobs from:', `${API_BASE_URL}/admin/jobs/recent`);
       
       const response = await fetch(`${API_BASE_URL}/admin/jobs/recent`, {
         headers: {
