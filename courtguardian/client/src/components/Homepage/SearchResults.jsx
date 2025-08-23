@@ -597,7 +597,7 @@ export default function SearchResults() {
             fontSize: '1rem'
           }}>
             {filteredCourts.length} court{filteredCourts.length !== 1 ? 's' : ''} found
-            {totalCourtsCount > filteredCourts.length && !showAllCourts && (
+            {totalCourtsCount > 99 && filteredCourts.length === 99 && !showAllCourts && (
               <span style={{ color: '#9ca3af' }}> (showing first 99 of {totalCourtsCount})</span>
             )}
             {lat && lng && filteredCourts.length > 0 && ' (sorted by distance)'}
@@ -632,7 +632,7 @@ export default function SearchResults() {
             </div>
             
             {/* Show All Button */}
-            {totalCourtsCount > filteredCourts.length && !showAllCourts && (
+            {totalCourtsCount > 99 && filteredCourts.length === 99 && !showAllCourts && (
               <div style={{
                 display: 'flex',
                 justifyContent: 'center',

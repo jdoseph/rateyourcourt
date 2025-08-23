@@ -31,31 +31,31 @@ class GooglePlacesService {
       throw new Error('Google Places API key not configured');
     }
 
-    console.log(`🔍 Searching for ${sportType} courts near ${latitude}, ${longitude} within ${radius}m`);
+    // console.log(`🔍 Searching for ${sportType} courts near ${latitude}, ${longitude} within ${radius}m`);
     
     const searchTerms = this.getSportSearchTerms(sportType);
-    console.log(`📝 Using search terms:`, searchTerms);
+    // console.log(`📝 Using search terms:`, searchTerms);
     
     const allResults = [];
 
     try {
       // Search with each term to get comprehensive results
       for (const term of searchTerms) {
-        console.log(`🔎 Searching for: "${term}"`);
+        // console.log(`🔎 Searching for: "${term}"`);
         const results = await this.performTextSearch(term, latitude, longitude, radius);
-        console.log(`📊 Found ${results.length} results for "${term}"`);
+        // console.log(`📊 Found ${results.length} results for "${term}"`);
         allResults.push(...results);
       }
 
-      console.log(`🔢 Total raw results: ${allResults.length}`);
+      // console.log(`🔢 Total raw results: ${allResults.length}`);
 
       // Remove duplicates based on place_id
       const uniqueResults = this.deduplicateResults(allResults);
-      console.log(`🎯 Unique results after deduplication: ${uniqueResults.length}`);
+      // console.log(`🎯 Unique results after deduplication: ${uniqueResults.length}`);
       
       // Filter and validate results
       const validatedResults = await this.validateSearchResults(uniqueResults, sportType);
-      console.log(`✅ Final validated results: ${validatedResults.length}`);
+      // console.log(`✅ Final validated results: ${validatedResults.length}`);
       
       return validatedResults;
     } catch (error) {
@@ -75,14 +75,14 @@ class GooglePlacesService {
       type: 'establishment'
     };
 
-    console.log(`🌐 Making API request to: ${url}`);
-    console.log(`📍 Query params:`, params);
+    // console.log(`🌐 Making API request to: ${url}`);
+    // console.log(`📍 Query params:`, params);
 
     try {
       const response = await axios.get(url, { params });
       
-      console.log(`📡 API Response status: ${response.data.status}`);
-      console.log(`📈 Results count: ${response.data.results?.length || 0}`);
+      // console.log(`📡 API Response status: ${response.data.status}`);
+      // console.log(`📈 Results count: ${response.data.results?.length || 0}`);
       
       if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
         console.error(`❌ Google Places API error: ${response.data.status}`);
@@ -91,7 +91,7 @@ class GooglePlacesService {
       }
 
       if (response.data.status === 'ZERO_RESULTS') {
-        console.log(`⚠️ No results found for query: "${query}"`);
+        // console.log(`⚠️ No results found for query: "${query}"`);
       }
 
       return response.data.results || [];
@@ -146,29 +146,29 @@ class GooglePlacesService {
   // Validate search results to ensure they're relevant courts
   async validateSearchResults(results, sportType) {
     const validatedResults = [];
-    console.log(`🔍 Starting validation of ${results.length} results for ${sportType}`);
+//     console.log(`🔍 Starting validation of ${results.length} results for ${sportType}`);
 
     for (const [index, result] of results.entries()) {
       try {
-        console.log(`📋 Validating result ${index + 1}/${results.length}: ${result.name} (${result.place_id})`);
+//         console.log(`📋 Validating result ${index + 1}/${results.length}: ${result.name} (${result.place_id})`);
         
         // Get detailed information
         const details = await this.getPlaceDetails(result.place_id);
-        console.log(`📄 Got details for: ${details.name}`);
+//         console.log(`📄 Got details for: ${details.name}`);
         
         // Basic validation
         const isValid = this.isValidCourt(details, sportType);
-        console.log(`✓ Validation result: ${isValid ? 'VALID' : 'INVALID'} for ${details.name}`);
+//         console.log(`✓ Validation result: ${isValid ? 'VALID' : 'INVALID'} for ${details.name}`);
         
         if (!isValid) {
-          console.log(`❌ Skipping ${details.name} - failed validation`);
+//           console.log(`❌ Skipping ${details.name} - failed validation`);
           continue;
         }
 
         // Transform to our court format
         const courtData = this.transformToCourtData(details, sportType);
         validatedResults.push(courtData);
-        console.log(`✅ Added ${courtData.name} to validated results`);
+//         console.log(`✅ Added ${courtData.name} to validated results`);
         
         // Add small delay to respect rate limits
         await this.sleep(100);
@@ -178,19 +178,19 @@ class GooglePlacesService {
       }
     }
 
-    console.log(`🏁 Validation complete: ${validatedResults.length} valid courts found`);
+//     console.log(`🏁 Validation complete: ${validatedResults.length} valid courts found`);
     return validatedResults;
   }
 
   // Check if a place is likely a valid court
   isValidCourt(placeDetails, sportType) {
-    console.log(`🔍 Validating: ${placeDetails.name}`);
-    console.log(`📊 Business status: ${placeDetails.business_status}`);
-    console.log(`🏷️ Types: ${placeDetails.types?.join(', ')}`);
+//     console.log(`🔍 Validating: ${placeDetails.name}`);
+//     console.log(`📊 Business status: ${placeDetails.business_status}`);
+//     console.log(`🏷️ Types: ${placeDetails.types?.join(', ')}`);
     
     // Check if business is operational
     if (placeDetails.business_status === 'CLOSED_PERMANENTLY') {
-      console.log(`❌ Business permanently closed`);
+//       console.log(`❌ Business permanently closed`);
       return false;
     }
 
@@ -225,11 +225,11 @@ class GooglePlacesService {
 
     for (const term of blacklistTerms) {
       if (combinedText.includes(term)) {
-        console.log(`❌ Filtered out: contains blacklisted term "${term}"`);
+//         console.log(`❌ Filtered out: contains blacklisted term "${term}"`);
         return false;
       }
     }
-    console.log(`✅ Passed blacklist filter`);
+//     console.log(`✅ Passed blacklist filter`);
 
     // Exclude retail/store place types
     const types = placeDetails.types || [];
@@ -241,11 +241,11 @@ class GooglePlacesService {
 
     for (const excludedType of excludedTypes) {
       if (types.includes(excludedType)) {
-        console.log(`❌ Filtered out: has excluded place type "${excludedType}"`);
+//         console.log(`❌ Filtered out: has excluded place type "${excludedType}"`);
         return false;
       }
     }
-    console.log(`✅ Passed place type filter`);
+//     console.log(`✅ Passed place type filter`);
 
     // Check if name or types suggest it's relevant (name already defined above)
     
@@ -256,11 +256,11 @@ class GooglePlacesService {
       'recreation', 'rec', 'sports', 'athletic', 'country club', 'racquet', 'racket'
     ];
 
-    console.log(`🔎 Checking for sport-related keywords in name: "${name}"`);
+//     console.log(`🔎 Checking for sport-related keywords in name: "${name}"`);
 
     const hasRelevantName = allSportKeywords.some(keyword => {
       const matches = name.includes(keyword);
-      if (matches) console.log(`✅ Name matches keyword: "${keyword}"`);
+      // if (matches) console.log(`✅ Name matches keyword: "${keyword}"`);
       return matches;
     });
     
@@ -270,18 +270,18 @@ class GooglePlacesService {
         'stadium', 'school', 'university', 'recreation', 'tourist_attraction'
       ];
       const matches = relevantTypes.includes(type);
-      if (matches) console.log(`✅ Type matches: ${type}`);
+      // if (matches) console.log(`✅ Type matches: ${type}`);
       return matches;
     });
 
     // Special handling for parks (they often have courts)
     const isPark = types.includes('park') || name.includes('park');
     if (isPark) {
-      console.log(`🏞️ This is a park - likely to have courts`);
+//       console.log(`🏞️ This is a park - likely to have courts`);
     }
 
     const isValid = hasRelevantName || hasRelevantType || isPark;
-    console.log(`🎯 Final validation: ${isValid ? 'VALID' : 'INVALID'} (name: ${hasRelevantName}, type: ${hasRelevantType}, park: ${isPark})`);
+//     console.log(`🎯 Final validation: ${isValid ? 'VALID' : 'INVALID'} (name: ${hasRelevantName}, type: ${hasRelevantType}, park: ${isPark})`);
 
     return isValid;
   }
@@ -339,7 +339,7 @@ class GooglePlacesService {
       throw new Error('Google Places API key not configured');
     }
 
-    console.log(`🗺️ Geocoding address: "${address}"`);
+//     console.log(`🗺️ Geocoding address: "${address}"`);
 
     try {
       const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
@@ -349,13 +349,13 @@ class GooglePlacesService {
         }
       });
 
-      console.log(`📍 Geocoding response status: ${response.data.status}`);
+//       console.log(`📍 Geocoding response status: ${response.data.status}`);
 
       if (response.data.status === 'OK' && response.data.results.length > 0) {
         const result = response.data.results[0];
         const location = result.geometry.location;
         
-        console.log(`✅ Geocoded "${address}" to: ${location.lat}, ${location.lng}`);
+//         console.log(`✅ Geocoded "${address}" to: ${location.lat}, ${location.lng}`);
         
         return {
           latitude: location.lat,
@@ -377,7 +377,7 @@ class GooglePlacesService {
       throw new Error('Google Places API key not configured');
     }
 
-    console.log(`🗺️ Reverse geocoding: ${latitude}, ${longitude}`);
+//     console.log(`🗺️ Reverse geocoding: ${latitude}, ${longitude}`);
 
     try {
       const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
@@ -387,12 +387,12 @@ class GooglePlacesService {
         }
       });
 
-      console.log(`📍 Reverse geocoding response status: ${response.data.status}`);
+//       console.log(`📍 Reverse geocoding response status: ${response.data.status}`);
 
       if (response.data.status === 'OK' && response.data.results.length > 0) {
         const result = response.data.results[0];
         
-        console.log(`✅ Reverse geocoded to: ${result.formatted_address}`);
+//         console.log(`✅ Reverse geocoded to: ${result.formatted_address}`);
         
         return {
           formatted_address: result.formatted_address,
