@@ -171,7 +171,7 @@ class JobScheduler {
         FROM discovery_areas 
         WHERE last_discovered > NOW() - INTERVAL '30 days'
         GROUP BY latitude, longitude
-        HAVING COUNT(*) >= 3
+        HAVING COUNT(*) >= 1
         ORDER BY search_count DESC, last_searched DESC
         LIMIT 20
       `);
