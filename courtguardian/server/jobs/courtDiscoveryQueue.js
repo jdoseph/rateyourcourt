@@ -162,7 +162,7 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
     const savedCourts = [];
     let newCourts = 0;
     let duplicates = 0;
-    const systemUserId = '00000000-0000-0000-0000-000000000000'; // System user ID for background jobs
+    const systemUserId = null; // Use null for system-created courts (no specific user)
     
     console.log(`💾 Processing ${discoveredCourts.length} discovered courts for database saving...`);
     for (const [index, courtData] of discoveredCourts.entries()) {
