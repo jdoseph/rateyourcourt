@@ -125,7 +125,7 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
   courtDiscoveryQueue.process('discover-popular-area', async (job) => {
   const { latitude, longitude, radius, sportType, priority = 'normal' } = job.data;
   
-  console.log(`🔍 Processing discovery job for ${sportType} courts at ${latitude}, ${longitude} (radius: ${radius}m)`);
+  // console.log(`🔍 Processing discovery job for ${sportType} courts at ${latitude}, ${longitude} (radius: ${radius}m)`);
   
   try {
     // Update job progress
@@ -134,7 +134,7 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
     // Check if we've already searched this area recently (within 7 days)
     const existingSearch = await checkRecentSearch(latitude, longitude, radius, sportType);
     if (existingSearch) {
-      console.log(`⏭️ Skipping recent search area: ${latitude}, ${longitude}`);
+      // console.log(`⏭️ Skipping recent search area: ${latitude}, ${longitude}`);
       await job.progress(100);
       return {
         status: 'skipped',
@@ -152,9 +152,9 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
     await job.progress(40);
     
     // Search for courts using Google Places API
-    console.log(`🔍 Starting Google Places search for ${sportType} courts...`);
+    // console.log(`🔍 Starting Google Places search for ${sportType} courts...`);
     const discoveredCourts = await googlePlacesService.searchCourts(latitude, longitude, radius, sportType);
-    console.log(`📊 Google Places returned ${discoveredCourts.length} courts`);
+    // console.log(`📊 Google Places returned ${discoveredCourts.length} courts`);
     
     await job.progress(60);
     
@@ -164,13 +164,13 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
     let duplicates = 0;
     const systemUserId = null; // Use null for system-created courts (no specific user)
     
-    console.log(`💾 Processing ${discoveredCourts.length} discovered courts for database saving...`);
+    // console.log(`💾 Processing ${discoveredCourts.length} discovered courts for database saving...`);
     for (const [index, courtData] of discoveredCourts.entries()) {
       try {
         // Only log every 10th court to reduce spam
-        if (index % 10 === 0 || index === discoveredCourts.length - 1) {
-          console.log(`📝 Saving courts ${index + 1}/${discoveredCourts.length}...`);
-        }
+        // if (index % 10 === 0 || index === discoveredCourts.length - 1) {
+        //   console.log(`📝 Saving courts ${index + 1}/${discoveredCourts.length}...`);
+        // }
         
         const savedCourt = await saveDiscoveredCourt(courtData, systemUserId);
         if (savedCourt.isNew) {
@@ -189,7 +189,7 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
       }
     }
     
-    console.log(`🏁 Background job complete: ${savedCourts.length} courts processed (${newCourts} new, ${duplicates} duplicates)`);
+    // console.log(`🏁 Background job complete: ${savedCourts.length} courts processed (${newCourts} new, ${duplicates} duplicates)`);
     
     // Update search area status
     await updateSearchArea(latitude, longitude, radius, sportType, savedCourts.length);
@@ -405,7 +405,7 @@ module.exports = {
     }
     
     try {
-      console.log(`🔄 Attempting to add discovery job to queue...`);
+      // console.log(`🔄 Attempting to add discovery job to queue...`);
       
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Job creation timeout')), 5000);
@@ -414,7 +414,7 @@ module.exports = {
       const createJobPromise = courtDiscoveryQueue.add('discover-popular-area', jobData, jobOptions);
       const job = await Promise.race([createJobPromise, timeoutPromise]);
       
-      console.log(`📋 Successfully added discovery job ${job.id} for ${sportType} courts at ${latitude}, ${longitude}`);
+      // console.log(`📋 Successfully added discovery job ${job.id} for ${sportType} courts at ${latitude}, ${longitude}`);
       return job;
     } catch (error) {
       console.error(`❌ Failed to add discovery job: ${error.message}`);
