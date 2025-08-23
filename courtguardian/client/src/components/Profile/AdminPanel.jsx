@@ -44,14 +44,78 @@ export default function AdminPanel({ user }) {
 
   const fetchAdminStats = async () => {
     try {
-      // This would be implemented with actual admin stats endpoints
-      setStats({
-        pendingSuggestions: 5,
-        totalCourts: 156,
-        discoveredThisMonth: 23
+      const token = getToken();
+      
+      // Get basic court statistics
+      const courtsResponse = await fetch(`${API_BASE_URL}/courts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      let totalCourts = 0;
+      if (courtsResponse.ok) {
+        const courtsData = await courtsResponse.json();
+        totalCourts = courtsData.courts ? courtsData.courts.length : 0;
+      }
+      
+      // Get pending suggestions count
+      let pendingSuggestions = 0;
+      try {
+        const suggestionsResponse = await fetch(`${API_BASE_URL}/discovery/admin/suggestions?status=pending`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (suggestionsResponse.ok) {
+          const suggestionsData = await suggestionsResponse.json();
+          pendingSuggestions = suggestionsData.suggestions ? suggestionsData.suggestions.length : 0;
+        }
+      } catch (err) {
+        console.log('Suggestions endpoint not available');
+      }
+      
+      // Get popular areas for discovery stats
+      let discoveredThisMonth = 0;
+      try {
+        const areasResponse = await fetch(`${API_BASE_URL}/admin/jobs/popular-areas`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (areasResponse.ok) {
+          const areasData = await areasResponse.json();
+          // Count recent discoveries (last 30 days)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          
+          discoveredThisMonth = areasData.areas ? areasData.areas.filter(area => 
+            new Date(area.last_discovered) > thirtyDaysAgo
+          ).length : 0;
+        }
+      } catch (err) {
+        console.log('Popular areas endpoint not available');
+      }
+      
+      setStats({
+        pendingSuggestions,
+        totalCourts,
+        discoveredThisMonth
+      });
+      
     } catch (error) {
       console.error('Error fetching admin stats:', error);
+      // Fallback to default values
+      setStats({
+        pendingSuggestions: 0,
+        totalCourts: 0,
+        discoveredThisMonth: 0
+      });
     }
   };
 
@@ -272,7 +336,14 @@ export default function AdminPanel({ user }) {
   // Fetch verification statistics
   const fetchVerificationStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/verifications/stats`);
+      const token = getToken();
+      const response = await fetch(`${API_BASE_URL}/verifications/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setVerificationStats({
@@ -280,9 +351,22 @@ export default function AdminPanel({ user }) {
           totalVerifications: parseInt(data.total_verifications) || 0,
           courtsNeedingVerification: parseInt(data.courts_needing_verification) || 0
         });
+      } else {
+        // Fallback to default values
+        setVerificationStats({
+          pendingVerifications: 0,
+          totalVerifications: 0,
+          courtsNeedingVerification: 0
+        });
       }
     } catch (error) {
       console.error('Error fetching verification stats:', error);
+      // Fallback to default values
+      setVerificationStats({
+        pendingVerifications: 0,
+        totalVerifications: 0,
+        courtsNeedingVerification: 0
+      });
     }
   };
 
