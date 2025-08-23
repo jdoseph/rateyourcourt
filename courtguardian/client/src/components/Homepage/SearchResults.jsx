@@ -309,15 +309,21 @@ export default function SearchResults() {
 
   // Handle new search
   const handleNewSearch = () => {
-    if (!newSearchTerm.trim()) return;
+    // Allow search with either search term or sport selection
+    if (!newSearchTerm.trim() && newSelectedSport === 'All Sports') return;
     
-    let searchUrl = `/search?q=${encodeURIComponent(newSearchTerm.trim())}`;
+    let searchUrl = '/search?';
+    const params = new URLSearchParams();
     
-    if (newSelectedSport !== 'All Sports') {
-      searchUrl += `&sport=${encodeURIComponent(newSelectedSport)}`;
+    if (newSearchTerm.trim()) {
+      params.append('q', newSearchTerm.trim());
     }
     
-    navigate(searchUrl);
+    if (newSelectedSport !== 'All Sports') {
+      params.append('sport', newSelectedSport);
+    }
+    
+    navigate(searchUrl + params.toString());
   };
 
   // Handle enter key press
@@ -505,7 +511,7 @@ export default function SearchResults() {
               {/* Search Button */}
               <button
                 onClick={handleNewSearch}
-                disabled={!newSearchTerm.trim()}
+                disabled={!newSearchTerm.trim() && newSelectedSport === 'All Sports'}
                 className="btn-primary-custom"
                 style={{ padding: '0.5rem 1rem' }}
               >
