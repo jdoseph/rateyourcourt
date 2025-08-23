@@ -93,8 +93,6 @@ export default function Profile({ user, onUserUpdate }) {
   return (
     <div>
       <h2 className="profile-section-title">Account Settings</h2>
-
-
       {message && (
         <div className={`alert-${message.type}`}>
           {message.text}

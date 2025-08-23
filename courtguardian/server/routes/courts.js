@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // your pg pool
 const authenticateToken = require('../middleware/auth'); // your JWT middleware
+const { requireAdmin } = require('../middleware/adminAuth'); // admin middleware
 const { ALLOWED_SPORTS } = require('../constants');
 
 // POST /api/courts  (protected)
@@ -49,6 +50,70 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+// DELETE /api/courts/:id (admin only)
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const courtId = req.params.id;
+  
+  // Validate UUID format (basic check)
+  if (!courtId || typeof courtId !== 'string' || courtId.trim().length === 0) {
+    return res.status(400).json({ error: 'Invalid court id' });
+  }
+
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // First, check if the court exists
+    const courtCheck = await client.query('SELECT id, name FROM courts WHERE id = $1', [courtId]);
+    
+    if (courtCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Court not found' });
+    }
+    
+    const courtName = courtCheck.rows[0].name;
+    
+    // Delete related data in the correct order (to respect foreign key constraints)
+    
+    // Delete reviews
+    await client.query('DELETE FROM reviews WHERE court_id = $1', [courtId]);
+    
+    // Delete saved courts (user bookmarks)
+    await client.query('DELETE FROM saved_courts WHERE court_id = $1', [courtId]);
+    
+    // Delete court photos
+    await client.query('DELETE FROM court_photos WHERE court_id = $1', [courtId]);
+    
+    // Delete verification submissions related to this court
+    await client.query('DELETE FROM court_verifications WHERE court_id = $1', [courtId]);
+    
+    // Finally, delete the court itself
+    const deleteResult = await client.query('DELETE FROM courts WHERE id = $1 RETURNING id', [courtId]);
+    
+    await client.query('COMMIT');
+    
+    console.log(`Admin ${req.admin.username} deleted court: ${courtName} (${courtId})`);
+    
+    res.json({ 
+      message: 'Court deleted successfully',
+      deletedCourt: {
+        id: courtId,
+        name: courtName
+      }
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error deleting court:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete court',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    client.release();
+  }
+});
 
 // Search courts by location and filters (public endpoint)
 router.get('/search', async (req, res) => {

@@ -23,6 +23,12 @@ export default function   AdminPanel({ user }) {
   });
   const [processingVerifications, setProcessingVerifications] = useState(new Set());
 
+  // Court management state
+  const [allCourts, setAllCourts] = useState([]);
+  const [courtSearchTerm, setCourtSearchTerm] = useState('');
+  const [courtSportFilter, setCourtSportFilter] = useState('');
+  const [deletingCourt, setDeletingCourt] = useState(null);
+
   // Discovery-related state
   const [address, setAddress] = useState('');
   const [coordinates, setCoordinates] = useState({ latitude: '', longitude: '' });
@@ -39,6 +45,8 @@ export default function   AdminPanel({ user }) {
       fetchCourtSuggestions();
     } else if (activeTab === 'verifications') {
       fetchPendingVerifications();
+    } else if (activeTab === 'management') {
+      fetchAllCourts();
     }
   }, [activeTab]);
 
@@ -116,6 +124,92 @@ export default function   AdminPanel({ user }) {
         totalCourts: 0,
         discoveredThisMonth: 0
       });
+    }
+  };
+
+  // Court Management Functions
+  const fetchAllCourts = async () => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      const url = new URL(`${API_BASE_URL}/courts`);
+      
+      // Add search filters
+      if (courtSearchTerm) {
+        url.searchParams.append('searchTerm', courtSearchTerm);
+      }
+      if (courtSportFilter) {
+        url.searchParams.append('sport_type', courtSportFilter);
+      }
+      url.searchParams.append('limit', '200'); // Get more courts for admin management
+      
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const courts = await response.json();
+        setAllCourts(Array.isArray(courts) ? courts : courts.courts || []);
+      } else {
+        console.error('Failed to fetch courts:', response.status);
+        setAllCourts([]);
+      }
+    } catch (error) {
+      console.error('Error fetching courts:', error);
+      setAllCourts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteCourt = async (courtId, courtName) => {
+    if (!window.confirm(`Are you sure you want to delete "${courtName}"? This action cannot be undone and will remove all associated reviews, photos, and user data.`)) {
+      return;
+    }
+    
+    setDeletingCourt(courtId);
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_BASE_URL}/courts/${courtId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setToast({
+          show: true,
+          message: `Court "${courtName}" deleted successfully`,
+          type: 'success'
+        });
+        
+        // Remove the court from the local state
+        setAllCourts(prev => prev.filter(court => court.id !== courtId));
+        
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          totalCourts: Math.max(0, prev.totalCourts - 1)
+        }));
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete court');
+      }
+    } catch (error) {
+      console.error('Error deleting court:', error);
+      setToast({
+        show: true,
+        message: error.message || 'Failed to delete court',
+        type: 'error'
+      });
+    } finally {
+      setDeletingCourt(null);
     }
   };
 
@@ -492,6 +586,7 @@ export default function   AdminPanel({ user }) {
     { id: 'discovery', label: 'Court Discovery', icon: '🗺️' },
     { id: 'suggestions', label: 'Review Suggestions', icon: '💡' },
     { id: 'verifications', label: `Verify Data (${verificationStats.pendingVerifications})`, icon: '✅' },
+    { id: 'management', label: 'Court Management', icon: '🗂️' },
     { id: 'jobs', label: 'Background Jobs', icon: '⚙️' },
     { id: 'stats', label: 'Statistics', icon: '📊' }
   ];
@@ -1170,6 +1265,204 @@ export default function   AdminPanel({ user }) {
                 </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'management' && (
+        <div>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1rem' }}>
+            Court Management
+          </h3>
+          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
+            Search, view, and manage all courts in the database.
+          </p>
+
+          {/* Search and Filter Controls */}
+          <div style={{
+            backgroundColor: '#f8fafc',
+            padding: '1.5rem',
+            borderRadius: '12px',
+            marginBottom: '2rem',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+              marginBottom: '1rem',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  fontSize: '0.875rem'
+                }}>
+                  Search Courts
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search by name or address..."
+                  value={courtSearchTerm}
+                  onChange={(e) => setCourtSearchTerm(e.target.value)}
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  fontSize: '0.875rem'
+                }}>
+                  Filter by Sport
+                </label>
+                <select
+                  value={courtSportFilter}
+                  onChange={(e) => setCourtSportFilter(e.target.value)}
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                >
+                  <option value="">All Sports</option>
+                  {ALLOWED_SPORTS.map(sport => (
+                    <option key={sport} value={sport}>{sport}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <button
+              onClick={fetchAllCourts}
+              disabled={loading}
+              className="form-button"
+              style={{
+                width: 'auto',
+                padding: '0.75rem 1.5rem',
+                fontSize: '0.875rem',
+                background: loading ? '#9ca3af' : '#3b82f6'
+              }}
+            >
+              {loading ? 'Searching...' : '🔍 Search Courts'}
+            </button>
+          </div>
+
+          {/* Courts List */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <div style={{ fontSize: '1rem', color: '#6b7280' }}>Loading courts...</div>
+            </div>
+          ) : allCourts.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '3rem',
+              backgroundColor: '#f9fafb',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <span style={{ fontSize: '3rem' }}>🏟️</span>
+              <h4 style={{ margin: '1rem 0 0.5rem 0', color: '#1f2937' }}>No courts found</h4>
+              <p style={{ margin: 0, color: '#6b7280' }}>Try adjusting your search criteria.</p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ 
+                marginBottom: '1rem',
+                fontSize: '0.875rem',
+                color: '#6b7280'
+              }}>
+                Showing {allCourts.length} courts
+              </div>
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                {allCourts.map(court => (
+                  <div key={court.id} style={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '12px',
+                    padding: '1.5rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
+                          {court.name}
+                        </h4>
+                        <p style={{ margin: '0.25rem 0', color: '#6b7280', fontSize: '0.875rem' }}>
+                          📍 {court.address || 'No address provided'}
+                        </p>
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '1rem', 
+                          fontSize: '0.875rem', 
+                          color: '#6b7280', 
+                          marginTop: '0.5rem',
+                          flexWrap: 'wrap',
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <span><strong>Sports:</strong> {court.sport_types ? court.sport_types.join(', ') : 'Unknown'}</span>
+                          <span><strong>Surface:</strong> {court.surface_type || 'Unknown'}</span>
+                          <span><strong>Courts:</strong> {court.court_count || 'Unknown'}</span>
+                          <span><strong>Reviews:</strong> {court.review_count || 0}</span>
+                          {court.average_rating > 0 && (
+                            <span><strong>Rating:</strong> ⭐ {parseFloat(court.average_rating).toFixed(1)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '1rem', 
+                      justifyContent: 'flex-end',
+                      flexWrap: 'wrap',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}>
+                      <button
+                        onClick={() => window.open(`/court/${court.id}`, '_blank')}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#2563eb'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#3b82f6'}
+                      >
+                        🔍 View Court
+                      </button>
+                      <button
+                        onClick={() => deleteCourt(court.id, court.name)}
+                        disabled={deletingCourt === court.id}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: deletingCourt === court.id ? '#9ca3af' : '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                          cursor: deletingCourt === court.id ? 'not-allowed' : 'pointer',
+                          transition: 'background-color 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => deletingCourt !== court.id && (e.target.style.backgroundColor = '#dc2626')}
+                        onMouseLeave={(e) => deletingCourt !== court.id && (e.target.style.backgroundColor = '#ef4444')}
+                      >
+                        {deletingCourt === court.id ? '⏳ Deleting...' : '🗑️ Delete Court'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
