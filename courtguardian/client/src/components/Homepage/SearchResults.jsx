@@ -291,11 +291,14 @@ export default function SearchResults() {
   const sport = searchParams.get('sport') || '';
   const lat = parseFloat(searchParams.get('lat')) || null;
   const lng = parseFloat(searchParams.get('lng')) || null;
+  const showAll = searchParams.get('show') === 'all';
   
   const [courts, setCourts] = useState([]);
   const [filteredCourts, setFilteredCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAllCourts, setShowAllCourts] = useState(false);
+  const [totalCourtsCount, setTotalCourtsCount] = useState(0);
   
   // New search state
   const [newSearchTerm, setNewSearchTerm] = useState(query);
@@ -309,9 +312,6 @@ export default function SearchResults() {
 
   // Handle new search
   const handleNewSearch = () => {
-    // Allow search with either search term or sport selection
-    if (!newSearchTerm.trim() && newSelectedSport === 'All Sports') return;
-    
     let searchUrl = '/search?';
     const params = new URLSearchParams();
     
@@ -321,6 +321,11 @@ export default function SearchResults() {
     
     if (newSelectedSport !== 'All Sports') {
       params.append('sport', newSelectedSport);
+    }
+    
+    // If no parameters, add a dummy parameter to show all courts
+    if (!params.toString()) {
+      params.append('show', 'all');
     }
     
     navigate(searchUrl + params.toString());
@@ -368,6 +373,13 @@ export default function SearchResults() {
             params.append('searchTerm', query.trim());
           }
           
+          // Set limit based on showAllCourts state
+          if (showAllCourts) {
+            params.append('limit', '1000'); // High limit to get all
+          } else {
+            params.append('limit', '99'); // Default limit
+          }
+          
           if (params.toString()) {
             courtUrl += '?' + params.toString();
           }
@@ -376,6 +388,33 @@ export default function SearchResults() {
           if (!res.ok) throw new Error('Failed to fetch courts');
           const data = await res.json();
           setCourts(data);
+          
+          // If we're showing limited results, fetch total count
+          if (!showAllCourts) {
+            const countUrl = `${API_BASE_URL}/courts`;
+            const countParams = new URLSearchParams();
+            
+            if (sport && sport !== 'All Sports') {
+              countParams.append('sport_type', sport);
+            }
+            
+            if (query && query.trim()) {
+              countParams.append('searchTerm', query.trim());
+            }
+            
+            countParams.append('limit', '1000'); // Get all to count
+            
+            try {
+              const countRes = await fetch(countUrl + '?' + countParams.toString());
+              if (countRes.ok) {
+                const countData = await countRes.json();
+                setTotalCourtsCount(Array.isArray(countData) ? countData.length : 0);
+              }
+            } catch (countError) {
+              console.error('Error fetching total count:', countError);
+              setTotalCourtsCount(0);
+            }
+          }
         }
       } catch (err) {
         setError(err.message);
@@ -384,7 +423,7 @@ export default function SearchResults() {
       }
     }
     fetchCourts();
-  }, [sport, lat, lng, query]);
+  }, [sport, lat, lng, query, showAllCourts]);
 
   useEffect(() => {
     let filtered = courts;
@@ -511,9 +550,14 @@ export default function SearchResults() {
               {/* Search Button */}
               <button
                 onClick={handleNewSearch}
-                disabled={!newSearchTerm.trim() && newSelectedSport === 'All Sports'}
+                disabled={false}
                 className="btn-primary-custom"
-                style={{ padding: '0.5rem 1rem' }}
+                style={{ 
+                  padding: '0.5rem 1rem'
+                }}
+                title={(!newSearchTerm.trim() && newSelectedSport === 'All Sports') 
+                  ? 'Show all courts' 
+                  : 'Search courts'}
               >
                 Search
               </button>
@@ -523,7 +567,14 @@ export default function SearchResults() {
           <div className="filter-tags">
             {sport && sport !== 'All Sports' && (
               <span className="badge-primary">
-                🏸 {sport}
+                {sport === 'Tennis' && '🎾'}
+                {sport === 'Pickleball' && '🥒'}
+                {sport === 'Basketball' && '🏀'}
+                {sport === 'Volleyball' && '🏐'}
+                {sport === 'Badminton' && '🏸'}
+                {sport === 'Padel' && '🎯'}
+                {!['Tennis', 'Pickleball', 'Basketball', 'Volleyball', 'Badminton', 'Padel'].includes(sport) && '🏟️'}
+                {' '}{sport}
               </span>
             )}
             {query && (
@@ -546,12 +597,15 @@ export default function SearchResults() {
             fontSize: '1rem'
           }}>
             {filteredCourts.length} court{filteredCourts.length !== 1 ? 's' : ''} found
+            {totalCourtsCount > filteredCourts.length && !showAllCourts && (
+              <span style={{ color: '#9ca3af' }}> (showing first 99 of {totalCourtsCount})</span>
+            )}
             {lat && lng && filteredCourts.length > 0 && ' (sorted by distance)'}
           </p>
         </div>
 
         {/* Search Results */}
-        {!query && !sport && !lat && !lng ? (
+        {!query && !sport && !lat && !lng && !showAll ? (
           <div className="empty-state">
             <h2 className="empty-state-heading">
               No search parameters provided
@@ -570,10 +624,34 @@ export default function SearchResults() {
             </p>
           </div>
         ) : (
-          <div className="grid-auto">
-            {filteredCourts.map((court) => (
-              <CourtCard key={court.id} court={court} query={query} />
-            ))}
+          <div>
+            <div className="grid-auto">
+              {filteredCourts.map((court) => (
+                <CourtCard key={court.id} court={court} query={query} />
+              ))}
+            </div>
+            
+            {/* Show All Button */}
+            {totalCourtsCount > filteredCourts.length && !showAllCourts && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginTop: '2rem',
+                padding: '1rem'
+              }}>
+                <button
+                  onClick={() => setShowAllCourts(true)}
+                  className="btn-primary-custom"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  Show All {totalCourtsCount} Courts
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
