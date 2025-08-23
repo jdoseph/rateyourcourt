@@ -1424,7 +1424,7 @@ export default function   AdminPanel({ user }) {
                       boxSizing: 'border-box'
                     }}>
                       <button
-                        onClick={() => window.open(`/court/${court.id}`, '_blank')}
+                        onClick={() => window.open(`/courts/${court.id}`, '_blank')}
                         style={{
                           padding: '0.5rem 1rem',
                           backgroundColor: '#3b82f6',
