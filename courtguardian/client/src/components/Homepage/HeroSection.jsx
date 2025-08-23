@@ -7,15 +7,23 @@ export default function HeroSection({ searchTerm, setSearchTerm, handleSearchKey
 
   // Enhanced search handler
   const handleEnhancedSearch = () => {
-    if (!searchTerm.trim()) return;
+    let searchUrl = '/search?';
+    const params = new URLSearchParams();
     
-    let searchUrl = `/search?q=${encodeURIComponent(searchTerm.trim())}`;
-    
-    if (selectedSport !== 'All Sports') {
-      searchUrl += `&sport=${encodeURIComponent(selectedSport)}`;
+    if (searchTerm.trim()) {
+      params.append('q', searchTerm.trim());
     }
     
-    window.location.href = searchUrl;
+    if (selectedSport !== 'All Sports') {
+      params.append('sport', selectedSport);
+    }
+    
+    // If no parameters, add a dummy parameter to show all courts
+    if (!params.toString()) {
+      params.append('show', 'all');
+    }
+    
+    window.location.href = searchUrl + params.toString();
   };
 
   // Handle enter key press
@@ -58,8 +66,8 @@ export default function HeroSection({ searchTerm, setSearchTerm, handleSearchKey
           <input
             type="search"
             placeholder={selectedSport === 'All Sports' ? 
-              "Search by court name or location" : 
-              `Search for ${selectedSport} courts by name or location`
+              "Search by court name or state e.g (GA, NY, IL)" : 
+              `Search for ${selectedSport} courts by name or state`
             }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -68,8 +76,11 @@ export default function HeroSection({ searchTerm, setSearchTerm, handleSearchKey
           />
           <button
             onClick={handleEnhancedSearch}
-            disabled={!searchTerm.trim()}
+            disabled={false}
             className="btn-primary-custom"
+            title={(!searchTerm.trim() && selectedSport === 'All Sports') 
+              ? 'Show all courts' 
+              : 'Search courts'}
           >
             <i className="bi bi-search" />
             Search

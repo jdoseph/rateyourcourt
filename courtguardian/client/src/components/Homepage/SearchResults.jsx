@@ -428,42 +428,70 @@ export default function SearchResults() {
   useEffect(() => {
     let filtered = courts;
 
-    // Fuzzy text-based filtering
+    // Smart text-based filtering
     if (query) {
-      // Configure Fuse.js for fuzzy searching
-      const fuseOptions = {
-        keys: [
-          { name: 'name', weight: 0.5 },           // Court name is most important
-          { name: 'sport_types', weight: 0.3 },     // Sport type is second priority
-          { name: 'address', weight: 0.2 }         // Address is lowest priority
-        ],
-        threshold: 0.4,        // 0.0 = perfect match, 1.0 = match anything
-        distance: 100,         // How far to search for patterns
-        minMatchCharLength: 2, // Minimum character length to trigger search
-        includeScore: true,    // Include relevance scores
-        shouldSort: true,      // Sort by relevance
-        ignoreLocation: true,  // Don't care about pattern position
-        findAllMatches: true   // Find all matching patterns
-      };
-
-      const fuse = new Fuse(courts, fuseOptions);
-      const fuseResults = fuse.search(query);
+      const queryTrim = query.trim();
+      const queryLower = queryTrim.toLowerCase();
       
-      // Extract items from Fuse.js results (with scores)
-      filtered = fuseResults.map(result => ({
-        ...result.item,
-        fuseScore: result.score
-      }));
+      // For very short queries (like state codes), be more restrictive
+      if (queryTrim.length <= 3) {
+        // Treat as potential state code or exact match
+        filtered = courts.filter(court => {
+          const name = (court.name || '').toLowerCase();
+          const address = (court.address || '').toLowerCase();
+          
+          // Look for word boundaries - must be standalone word or part of address
+          const wordBoundaryRegex = new RegExp(`\\b${queryLower}\\b`, 'i');
+          
+          return wordBoundaryRegex.test(name) || 
+                 wordBoundaryRegex.test(address) ||
+                 address.includes(`, ${queryLower} `) || // ", PA "
+                 address.includes(`, ${queryTrim.toUpperCase()} `) || // ", PA " 
+                 address.endsWith(`, ${queryLower}`) ||  // ", pa"
+                 address.endsWith(`, ${queryTrim.toUpperCase()}`); // ", PA"
+        });
+      } else {
+        // For longer queries, use fuzzy search
+        const fuseOptions = {
+          keys: [
+            { name: 'name', weight: 0.5 },           // Court name is most important
+            { name: 'sport_types', weight: 0.3 },     // Sport type is second priority
+            { name: 'address', weight: 0.2 }         // Address is lowest priority
+          ],
+          threshold: 0.4,        // 0.0 = perfect match, 1.0 = match anything
+          distance: 100,         // How far to search for patterns
+          minMatchCharLength: 3, // Require at least 3 characters for fuzzy matching
+          includeScore: true,    // Include relevance scores
+          shouldSort: true,      // Sort by relevance
+          ignoreLocation: true,  // Don't care about pattern position
+          findAllMatches: true   // Find all matching patterns
+        };
 
-      // If fuzzy search returns no results, fall back to basic includes search
-      if (filtered.length === 0) {
-        const queryNoSpaces = query.toLowerCase().replace(/\s/g, '');
-        filtered = courts.filter(court =>
-          (court.name && court.name.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces)) ||
-          (court.sport_types && Array.isArray(court.sport_types) && 
-           court.sport_types.some(sport => sport.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces))) ||
-          (court.address && court.address.toLowerCase().replace(/\s/g, '').includes(queryNoSpaces))
-        );
+        const fuse = new Fuse(courts, fuseOptions);
+        const fuseResults = fuse.search(query);
+        
+        // Extract items from Fuse.js results (with scores)
+        filtered = fuseResults.map(result => ({
+          ...result.item,
+          fuseScore: result.score
+        }));
+
+        // If fuzzy search returns no results, fall back to word-boundary search
+        if (filtered.length === 0) {
+          filtered = courts.filter(court => {
+            const name = (court.name || '').toLowerCase();
+            const address = (court.address || '').toLowerCase();
+            
+            // Split query into words and check each one
+            const queryWords = queryLower.split(/\s+/);
+            return queryWords.every(word => 
+              name.includes(word) || 
+              address.includes(word) ||
+              (court.sport_types && Array.isArray(court.sport_types) && 
+               court.sport_types.some(sport => sport.toLowerCase().includes(word)))
+            );
+          });
+        }
       }
     }
 
@@ -540,7 +568,7 @@ export default function SearchResults() {
               {/* Search Input */}
               <input
                 type="search"
-                placeholder="Search by court name or location"
+                placeholder="Search by court name or location e.g (GA, NY, IL)"
                 value={newSearchTerm}
                 onChange={(e) => setNewSearchTerm(e.target.value)}
                 onKeyDown={handleKeyPress}
