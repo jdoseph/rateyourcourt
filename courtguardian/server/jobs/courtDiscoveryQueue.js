@@ -322,10 +322,10 @@ async function saveDiscoveredCourt(courtData, createdBy) {
       return { court: duplicateCheck.rows[0], isNew: false };
     }
 
-    // Insert new court
+    // Insert new court  
     const result = await client.query(`
       INSERT INTO courts (
-        name, sport_type, address, surface_type, lighting, court_count,
+        name, sport_types, address, surface_type, lighting, court_count,
         lat, lng, latitude, longitude, google_place_id, google_rating, google_total_ratings,
         phone_number, website_url, opening_hours, price_level, photos,
         verification_status, discovery_source, created_by, created_at, updated_at
@@ -333,7 +333,7 @@ async function saveDiscoveredCourt(courtData, createdBy) {
       RETURNING *
     `, [
       courtData.name,
-      courtData.sport_type,
+      courtData.sport_types || [courtData.sport_type || 'Tennis'], // Use sport_types array or fallback to sport_type
       courtData.address,
       courtData.surface_type,
       courtData.lighting,
