@@ -103,6 +103,7 @@ if (redisConfig) {
 
 // Create a dummy queue object to prevent errors if queue is not initialized
 if (!courtDiscoveryQueue) {
+  console.warn('⚠️ Creating mock queue object - Redis not available');
   courtDiscoveryQueue = {
     getWaiting: () => Promise.resolve([]),
     getActive: () => Promise.resolve([]),
@@ -115,6 +116,8 @@ if (!courtDiscoveryQueue) {
     process: () => {},
     on: () => {}
   };
+} else if (courtDiscoveryQueue.add) {
+  console.log('✅ Real Bull queue initialized and available for jobs');
 }
 
 // Job processor for court discovery (only if queue is properly initialized)
@@ -389,9 +392,9 @@ module.exports = {
       delay: priority === 'low' ? 60000 : 0,
     };
     
-    // Check if queue is ready
-    if (!courtDiscoveryQueue || !queueReady) {
-      console.warn('⚠️ Queue not ready, returning mock job');
+    // Check if we have a real queue (not the mock fallback)
+    if (!courtDiscoveryQueue || typeof courtDiscoveryQueue.add !== 'function' || courtDiscoveryQueue.add.toString().includes('mock')) {
+      console.warn('⚠️ Using mock queue - Redis not available');
       return {
         id: `mock-${Date.now()}`,
         data: jobData,
@@ -400,19 +403,22 @@ module.exports = {
     }
     
     try {
+      console.log(`🔄 Attempting to add discovery job to queue...`);
+      
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Job creation timeout')), 3000);
+        setTimeout(() => reject(new Error('Job creation timeout')), 5000);
       });
       
       const createJobPromise = courtDiscoveryQueue.add('discover-popular-area', jobData, jobOptions);
       const job = await Promise.race([createJobPromise, timeoutPromise]);
       
-      console.log(`📋 Added discovery job ${job.id} for ${sportType} courts at ${latitude}, ${longitude}`);
+      console.log(`📋 Successfully added discovery job ${job.id} for ${sportType} courts at ${latitude}, ${longitude}`);
       return job;
     } catch (error) {
       console.error(`❌ Failed to add discovery job: ${error.message}`);
       
       // Return mock job on any failure
+      console.warn('🔄 Falling back to mock job due to error');
       return {
         id: `mock-${Date.now()}`,
         data: jobData,
