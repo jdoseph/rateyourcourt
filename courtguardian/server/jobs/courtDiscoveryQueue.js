@@ -11,12 +11,27 @@ const pool = new Pool({
 // Create Bull queue for court discovery jobs
 // Configure Redis connection for Bull queue
 let redisConfig;
-if (process.env.REDIS_URL) {
-  console.log('🔧 Using REDIS_URL for Bull queue connection:', process.env.REDIS_URL);
-  redisConfig = process.env.REDIS_URL;
+
+// Check for Railway-specific Redis URLs (in order of preference)
+const redisUrl = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
+
+if (redisUrl) {
+  console.log('🔧 Using Redis URL for Bull queue connection');
+  
+  // Check if URL contains railway.internal (won't work externally)
+  if (redisUrl.includes('railway.internal')) {
+    console.log('🚨 Railway internal DNS detected - this will likely fail');
+    console.log('💡 Try using REDIS_PUBLIC_URL instead of REDIS_URL in Railway');
+    
+    // For now, disable Redis and use fallback
+    console.log('⚠️ Disabling Redis due to railway.internal DNS issue');
+    redisConfig = null;
+  } else {
+    console.log('✅ Using Redis URL:', redisUrl);
+    redisConfig = redisUrl;
+  }
 } else {
-  console.log('⚠️ No REDIS_URL found - job queue will not function properly');
-  // Fallback for development
+  console.log('⚠️ No Redis URL found - using localhost fallback for development');
   redisConfig = {
     host: 'localhost',
     port: 6379
@@ -27,19 +42,21 @@ if (process.env.REDIS_URL) {
 let courtDiscoveryQueue;
 let queueReady = false;
 
-try {
-  courtDiscoveryQueue = new Queue('court discovery', {
-    redis: redisConfig,
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 2000,
-      },
-      removeOnComplete: 50,
-      removeOnFail: 20,
-    }
-  });
+// Only create queue if we have a valid Redis config
+if (redisConfig) {
+  try {
+    courtDiscoveryQueue = new Queue('court discovery', {
+      redis: redisConfig,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+        removeOnComplete: 50,
+        removeOnFail: 20,
+      }
+    });
 
   // Connection event handlers
   courtDiscoveryQueue.on('ready', () => {
@@ -74,11 +91,18 @@ try {
     }
   }, 2000);
 
-} catch (error) {
-  console.error('❌ Failed to initialize Bull queue:', error.message);
+  } catch (error) {
+    console.error('❌ Failed to initialize Bull queue:', error.message);
+    queueReady = false;
+    courtDiscoveryQueue = null;
+  }
+} else {
+  console.warn('⚠️ Redis disabled - using fallback job system');
   queueReady = false;
-  
-  // Create a dummy queue object to prevent errors
+}
+
+// Create a dummy queue object to prevent errors if queue is not initialized
+if (!courtDiscoveryQueue) {
   courtDiscoveryQueue = {
     getWaiting: () => Promise.resolve([]),
     getActive: () => Promise.resolve([]),
