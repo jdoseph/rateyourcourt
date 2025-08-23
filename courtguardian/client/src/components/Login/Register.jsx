@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { register, saveToken } from '../../api';
 import GoogleSignIn from './GoogleSignIn';
 import '../../App.css';
 
 export default function Register({ onRegister }) {
-  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const validateField = (name, value) => {
+  const validateField = (name, value, currentForm = form) => {
     const errors = {};
 
     switch (name) {
@@ -48,6 +49,14 @@ export default function Register({ onRegister }) {
         }
         break;
 
+      case 'confirmPassword':
+        if (!value) {
+          errors.confirmPassword = 'Please confirm your password';
+        } else if (value !== currentForm.password) {
+          errors.confirmPassword = 'Passwords do not match';
+        }
+        break;
+
       default:
         break;
     }
@@ -57,17 +66,26 @@ export default function Register({ onRegister }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    const newForm = { ...form, [name]: value };
+    setForm(newForm);
     
     // Clear general error when user starts typing
     if (error) setError(null);
     
-    // Validate field and update field errors
-    const fieldError = validateField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
+    // Validate current field
+    const fieldError = validateField(name, value, newForm);
+    let newFieldErrors = {
+      ...fieldErrors,
       [name]: fieldError[name] || null
-    }));
+    };
+    
+    // If password changed, also re-validate confirmPassword
+    if (name === 'password' && form.confirmPassword) {
+      const confirmError = validateField('confirmPassword', form.confirmPassword, newForm);
+      newFieldErrors.confirmPassword = confirmError.confirmPassword || null;
+    }
+    
+    setFieldErrors(newFieldErrors);
   };
 
   const handleSubmit = async (e) => {
@@ -79,11 +97,16 @@ export default function Register({ onRegister }) {
     // Validate all fields
     const allErrors = {};
     Object.keys(form).forEach(field => {
-      const fieldError = validateField(field, form[field]);
+      const fieldError = validateField(field, form[field], form);
       if (fieldError[field]) {
         allErrors[field] = fieldError[field];
       }
     });
+
+    // Additional check for password confirmation
+    if (form.password !== form.confirmPassword) {
+      allErrors.confirmPassword = 'Passwords do not match';
+    }
 
     if (Object.keys(allErrors).length > 0) {
       setFieldErrors(allErrors);
@@ -91,21 +114,36 @@ export default function Register({ onRegister }) {
       return;
     }
 
-    const data = await register(form);
-    setIsSubmitting(false);
+    try {
+      // For now, use the backend registration API and show success message
+      // In a production app, you would implement email verification on the backend
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001/api'}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      
+      const data = await response.json();
 
-    if (data.error) {
-      setError(data.error);
-    } else {
-      setSuccess('Registration successful!');
-      setForm({ username: '', email: '', password: '' });
-      setFieldErrors({});
-      // Call onRegister if provided
-      if (onRegister && data.user) {
-        setTimeout(() => onRegister(data.user), 1500);
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setSuccess('Registration successful! You can now log in with your credentials.');
+        setForm({ username: '', email: '', password: '', confirmPassword: '' });
+        setFieldErrors({});
+        
+        // Call onRegister if provided
+        if (onRegister && data.user) {
+          setTimeout(() => onRegister(data.user), 1500);
+        }
       }
+    } catch (err) {
+      setError('Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   return (
     <form onSubmit={handleSubmit}>
@@ -144,17 +182,52 @@ export default function Register({ onRegister }) {
       
       <div className="form-group">
         <label className="form-label">Password</label>
-        <input
-          name="password"
-          type="password"
-          className={`form-input ${fieldErrors.password ? 'form-input-error' : ''}`}
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Create a password"
-          disabled={isSubmitting}
-          required
-        />
+        <div className="password-input-container">
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            className={`form-input ${fieldErrors.password ? 'form-input-error' : ''}`}
+            value={form.password}
+            onChange={handleChange}
+            placeholder="Create a password"
+            disabled={isSubmitting}
+            required
+          />
+          <button
+            type="button"
+            className="password-toggle-button"
+            onClick={() => setShowPassword(!showPassword)}
+            disabled={isSubmitting}
+          >
+            {showPassword ? "👁️‍🗨️" : "👁️"}
+          </button>
+        </div>
         {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
+      </div>
+      
+      <div className="form-group">
+        <label className="form-label">Confirm Password</label>
+        <div className="password-input-container">
+          <input
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            className={`form-input ${fieldErrors.confirmPassword ? 'form-input-error' : ''}`}
+            value={form.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm your password"
+            disabled={isSubmitting}
+            required
+          />
+          <button
+            type="button"
+            className="password-toggle-button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            disabled={isSubmitting}
+          >
+            {showConfirmPassword ? "👁️‍🗨️" : "👁️"}
+          </button>
+        </div>
+        {fieldErrors.confirmPassword && <div className="field-error">{fieldErrors.confirmPassword}</div>}
       </div>
       
       <button type="submit" className="form-button" disabled={isSubmitting}>

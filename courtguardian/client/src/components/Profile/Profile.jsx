@@ -92,7 +92,8 @@ export default function Profile({ user, onUserUpdate }) {
 
   return (
     <div>
-      <h2 className="profile-section-title">Profile Information</h2>
+      <h2 className="profile-section-title">Account Settings</h2>
+
 
       {message && (
         <div className={`alert-${message.type}`}>
@@ -231,6 +232,7 @@ export default function Profile({ user, onUserUpdate }) {
           </button>
         )}
       </form>
+
       <Toast
         show={toast.show}
         message={toast.message}

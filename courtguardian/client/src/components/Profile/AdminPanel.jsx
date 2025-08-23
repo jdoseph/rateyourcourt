@@ -5,7 +5,7 @@ import Toast from '../Toast/Toast';
 import JobMonitor from '../Admin/JobMonitor';
 import '../../App.css';
 
-export default function AdminPanel({ user }) {
+export default function   AdminPanel({ user }) {
   const [activeTab, setActiveTab] = useState('discovery');
   const [suggestions, setSuggestions] = useState([]);
   const [verifications, setVerifications] = useState([]);

@@ -7,6 +7,7 @@ import '../../App.css';
 export default function Login({ onLogin }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,23 +17,37 @@ export default function Login({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
-    const data = await login(form);
+    try {
+      // First attempt regular login
+      const data = await login(form);
 
-    if (data.error) {
-      setError(data.error);
-    } else {
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
+        return;
+      }
+
+      // Save token temporarily
       saveToken(data.token);
       
-      // Fetch complete user profile after successful login
+      // Fetch complete user profile
       const profileData = await getUserProfile();
       if (profileData.error) {
         setError('Failed to load user profile');
+        setLoading(false);
         return;
       }
-      
+
+      // For now, proceed with normal login since 2FA requires Supabase setup
+      // In a production app, you would check for 2FA status in your backend
       onLogin(profileData.user);
       navigate('/');
+      setLoading(false);
+    } catch (err) {
+      setError('Login failed. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -66,8 +81,8 @@ export default function Login({ onLogin }) {
         />
       </div>
       
-      <button type="submit" className="form-button">
-        Login
+      <button type="submit" className="form-button" disabled={loading}>
+        {loading ? 'Logging in...' : 'Login'}
       </button>
       
       <GoogleSignIn 

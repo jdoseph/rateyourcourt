@@ -302,6 +302,9 @@ export default function JobMonitor() {
               <option value="Tennis">Tennis</option>
               <option value="Pickleball">Pickleball</option>
               <option value="Basketball">Basketball</option>
+              <option value="Volleyball">Volleyball</option>
+              <option value="Badminton">Badminton</option>
+              <option value="Padel">Padel</option>
             </select>
           </div>
         </div>
