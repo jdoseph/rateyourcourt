@@ -290,6 +290,7 @@ class GooglePlacesService {
   transformToCourtData(placeDetails, sportType) {
     return {
       name: placeDetails.name,
+      sport_type: sportType, // Singular field for database
       sport_types: [sportType], // Convert to array format
       address: placeDetails.formatted_address,
       latitude: placeDetails.geometry?.location?.lat,
