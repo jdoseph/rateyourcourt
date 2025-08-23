@@ -17,7 +17,6 @@ export default function JobMonitor() {
   const fetchJobStatus = async () => {
     try {
       const token = getToken();
-      console.log('🔄 Fetching job status from:', `${API_BASE_URL}/admin/jobs/status`);
       
       const response = await fetch(`${API_BASE_URL}/admin/jobs/status`, {
         headers: {
@@ -28,11 +27,9 @@ export default function JobMonitor() {
         signal: AbortSignal.timeout(10000)
       });
 
-      console.log('📊 Job status response:', response.status, response.statusText);
 
       if (!response.ok) {
         if (response.status === 404) {
-          console.warn('⚠️ Job monitoring endpoints not found (404)');
           setJobStatus({ queue: { waiting: 0, active: 0, completed: 0, failed: 0 }, scheduler: { running: false } });
           return;
         }
@@ -40,10 +37,9 @@ export default function JobMonitor() {
       }
       
       const data = await response.json();
-      console.log('✅ Job status data received:', data);
       setJobStatus(data);
     } catch (err) {
-      console.error('❌ Error fetching job status:', err.name, err.message);
+      console.error('Error fetching job status:', err.message);
       // Set default status instead of blocking the UI
       setJobStatus({ queue: { waiting: 0, active: 0, completed: 0, failed: 0 }, scheduler: { running: false } });
     }
@@ -63,11 +59,9 @@ export default function JobMonitor() {
         signal: AbortSignal.timeout(10000)
       });
 
-      console.log('📋 Recent jobs response:', response.status, response.statusText);
 
       if (!response.ok) {
         if (response.status === 404) {
-          console.warn('⚠️ Recent jobs endpoint not found (404)');
           setRecentJobs([]);
           return;
         }
@@ -75,10 +69,9 @@ export default function JobMonitor() {
       }
       
       const data = await response.json();
-      console.log('✅ Recent jobs data received:', data.jobs?.length || 0, 'jobs');
       setRecentJobs(data.jobs || []);
     } catch (err) {
-      console.error('❌ Error fetching recent jobs:', err.name, err.message);
+      console.error('Error fetching recent jobs:', err.message);
       // Set empty array instead of blocking the UI
       setRecentJobs([]);
     }

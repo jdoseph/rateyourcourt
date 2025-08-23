@@ -167,14 +167,16 @@ if (courtDiscoveryQueue && typeof courtDiscoveryQueue.process === 'function') {
     console.log(`💾 Processing ${discoveredCourts.length} discovered courts for database saving...`);
     for (const [index, courtData] of discoveredCourts.entries()) {
       try {
-        console.log(`📝 Saving court ${index + 1}/${discoveredCourts.length}: ${courtData.name}`);
+        // Only log every 10th court to reduce spam
+        if (index % 10 === 0 || index === discoveredCourts.length - 1) {
+          console.log(`📝 Saving courts ${index + 1}/${discoveredCourts.length}...`);
+        }
+        
         const savedCourt = await saveDiscoveredCourt(courtData, systemUserId);
         if (savedCourt.isNew) {
           newCourts++;
-          console.log(`✅ Saved new court: ${courtData.name}`);
         } else {
           duplicates++;
-          console.log(`🔄 Found existing court: ${courtData.name}`);
         }
         savedCourts.push(savedCourt.court);
         
