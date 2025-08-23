@@ -87,9 +87,9 @@ router.post('/admin/discover', authenticateToken, requireAdmin, async (req, res)
     await recordSearchArea(latitude, longitude, radius, sportType);
 
     // Search for courts using Google Places
-    console.log(`🔍 Starting Google Places search for ${sportType} courts at ${latitude}, ${longitude} within ${radius}m`);
+    // console.log(`🔍 Starting Google Places search for ${sportType} courts at ${latitude}, ${longitude} within ${radius}m`);
     const discoveredCourts = await googlePlacesService.searchCourts(latitude, longitude, radius, sportType);
-    console.log(`📊 Google Places returned ${discoveredCourts.length} courts`);
+    // console.log(`📊 Google Places returned ${discoveredCourts.length} courts`);
 
     // Process and save discovered courts
     const savedCourts = [];
@@ -103,7 +103,7 @@ router.post('/admin/discover', authenticateToken, requireAdmin, async (req, res)
         const savedCourt = await saveDiscoveredCourt(courtData, req.user.id);
         if (savedCourt.isNew) {
           newCourts++;
-          console.log(`✅ Saved new court: ${courtData.name}`);
+          // console.log(`✅ Saved new court: ${courtData.name}`);
         } else {
           duplicates++;
           console.log(`🔄 Found existing court: ${courtData.name}`);

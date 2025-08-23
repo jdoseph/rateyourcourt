@@ -23,7 +23,11 @@ export default function AboutUs() {
                 My Mission
               </h2>
               <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
-                Hi, I’m Joseph, and I started Rate Your Court because I wanted to make it easier for athletes and sports lovers like you to find the best places to play. Whether it’s your next favorite tennis court, a great pickleball spot, a hidden basketball gem, or any other sports facility, my goal is to connect you with the courts that make your game better. I’d love for you to share your experiences, discover new spots, and be part of a community that loves to play as much as I do.
+                Hi, I’m Joseph, and I started Rate Your Court because I wanted to make it easier for athletes and sports lovers like you to 
+                find the best "courts" to play. Whether it’s your next favorite tennis court, a great pickleball spot, 
+                a hidden basketball gem, or any other sports facility, my goal is to connect you with the courts that 
+                make your game better. I’d love for you to share your experiences, discover new spots, and be part of a 
+                community that loves to play as much as I do.
               </p>
             </section>
 
