@@ -37,9 +37,7 @@ export default function YourRatings({ user }) {
           rating: review.rating,
           review: review.comment,
           date: review.created_at.split('T')[0], // Format date
-          sportType: Array.isArray(review.sport_types) && review.sport_types.length > 0 
-            ? review.sport_types.join(', ') 
-            : 'Unknown'
+          sportType: review.sport_types || 'Not specified'
         }));
         
         setRatings(transformedRatings);

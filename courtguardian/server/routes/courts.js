@@ -11,15 +11,13 @@ router.post('/', authenticateToken, async (req, res) => {
   const created_by = req.user.id; // also move here to catch scope
 
   try {
-    if (!name || lat == null || lng == null || !sport_types || !Array.isArray(sport_types)) {
-      return res.status(400).json({ error: 'name, lat, lng, sport_types (array) are required' });
+    if (!name || lat == null || lng == null || !sport_types) {
+      return res.status(400).json({ error: 'name, lat, lng, sport_types are required' });
     }
     
-    // Validate all sport types
-    for (const sport of sport_types) {
-      if (!ALLOWED_SPORTS.includes(String(sport))) {
-        return res.status(400).json({ error: `Invalid sport type: ${sport}` });
-      }
+    // Validate sport type (single value)
+    if (!ALLOWED_SPORTS.includes(String(sport_types))) {
+      return res.status(400).json({ error: `Invalid sport type: ${sport_types}` });
     }
 
     const result = await pool.query(
@@ -35,7 +33,7 @@ router.post('/', authenticateToken, async (req, res) => {
         surface_type || null,
         lighting === true || lighting === 'true',
         court_count ? Number(court_count) : null,
-        sport_types[0], // Set sport_type to the first sport in the array
+        sport_types, // Set sport_type to the same value as sport_types
         sport_types,
         created_by
       ]
@@ -166,7 +164,7 @@ router.get('/', async (req, res) => {
 
     // Sport type filter
     if (sport_type) {
-      whereConditions.push(`$${paramIndex} = ANY(c.sport_types)`);
+      whereConditions.push(`c.sport_types = $${paramIndex}`);
       params.push(sport_type);
       paramIndex++;
     }
@@ -279,8 +277,8 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     let paramIndex = 4;
     
     if (sportType && ALLOWED_SPORTS.includes(sportType)) {
-      // Use sport_types array
-      query += ` AND $${paramIndex} = ANY(sport_types)`;
+      // Use sport_types as single value
+      query += ` AND sport_types = $${paramIndex}`;
       params.push(sportType);
       paramIndex++;
     }

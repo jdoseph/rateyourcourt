@@ -1404,7 +1404,7 @@ export default function   AdminPanel({ user }) {
                           width: '100%',
                           boxSizing: 'border-box'
                         }}>
-                          <span><strong>Sports:</strong> {court.sport_types ? court.sport_types.join(', ') : 'Unknown'}</span>
+                          <span><strong>Sports:</strong> {court.sport_types || 'Not specified'}</span>
                           <span><strong>Surface:</strong> {court.surface_type || 'Unknown'}</span>
                           <span><strong>Courts:</strong> {court.court_count || 'Unknown'}</span>
                           <span><strong>Reviews:</strong> {court.review_count || 0}</span>

@@ -7,9 +7,13 @@ import Fuse from 'fuse.js';
 function highlightMatch(text, query) {
   if (!query) return text;
   
+  // Ensure text is a string
+  const textStr = String(text || '');
+  if (!textStr) return textStr;
+  
   // For fuzzy search, try to highlight individual words that match
   const queryWords = query.toLowerCase().split(/\s+/);
-  let result = text;
+  let result = textStr;
   
   queryWords.forEach(word => {
     if (word.length >= 2) {
@@ -206,9 +210,7 @@ function CourtCard({ court, query }) {
           fontWeight: '500'
         }}>
           {highlightMatch(
-            (Array.isArray(court.sport_types) && court.sport_types.length > 0 
-              ? court.sport_types.join(', ') 
-              : 'Sports Court'), 
+            (court.sport_types || 'Not specified'), 
             query
           )}
         </span>

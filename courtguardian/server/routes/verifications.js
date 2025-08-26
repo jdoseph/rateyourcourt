@@ -245,8 +245,12 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [JSON.parse(verification.new_value), verification.court_id];
         } else if (verification.field_name === 'sport_types') {
+          // Convert single sport value to array format expected by database
+          console.log(`Updating sport_types for court ${verification.court_id} with single value:`, verification.new_value);
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          updateValues = [JSON.parse(verification.new_value), verification.court_id];
+          // Database expects JSON array, so wrap single value in array
+          const sportTypesArray = verification.new_value ? [verification.new_value] : null;
+          updateValues = [JSON.stringify(sportTypesArray), verification.court_id];
         } else {
           // Handle null values for required fields
           let value = verification.new_value;
