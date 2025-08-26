@@ -190,15 +190,21 @@ router.get('/admin/pending', authenticateToken, requireModerator, async (req, re
 });
 
 // Approve or reject a verification (admin only)
+// Approve or reject a verification (admin only)
 router.patch('/admin/:verificationId', authenticateToken, requireModerator, async (req, res) => {
   try {
-    const { verificationId } = req.params;
-    const { action, adminNotes } = req.body; // action: 'approve' or 'reject'
-    
+    // Clean and validate ID
+    let verificationId = req.params.verificationId.replace(/^:/, '').trim();
+    const uuidRegex = /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12}$/;
+    if (!uuidRegex.test(verificationId)) {
+      return res.status(400).json({ error: 'Invalid verification ID format' });
+    }
+
+    const { action, adminNotes } = req.body; // 'approve' or 'reject'
     if (!['approve', 'reject'].includes(action)) {
       return res.status(400).json({ error: 'Action must be "approve" or "reject"' });
     }
-    
+
     // Get verification details
     const verificationQuery = `
       SELECT cv.*, c.name as court_name
@@ -206,21 +212,18 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
       JOIN courts c ON cv.court_id = c.id
       WHERE cv.id = $1 AND cv.status = 'pending'
     `;
-    
     const verificationResult = await pool.query(verificationQuery, [verificationId]);
-    
+
     if (verificationResult.rows.length === 0) {
       return res.status(404).json({ error: 'Verification not found or already processed' });
     }
-    
+
     const verification = verificationResult.rows[0];
-    
-    // Start transaction
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       // Update verification status
       const newStatus = action === 'approve' ? 'approved' : 'rejected';
       await client.query(`
@@ -228,13 +231,12 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
         SET status = $1, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = $2, notes = COALESCE($3, notes)
         WHERE id = $4
       `, [newStatus, req.user.id, adminNotes, verificationId]);
-      
+
       // If approved, update the court record
       if (action === 'approve') {
         let updateQuery;
         let updateValues;
-        
-        // Handle different field types
+
         if (verification.field_name === 'court_count') {
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [parseInt(verification.new_value), verification.court_id];
@@ -245,17 +247,19 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [JSON.parse(verification.new_value), verification.court_id];
         } else if (verification.field_name === 'sport_types') {
-          // Convert single sport value to array format expected by database
-          console.log(`Updating sport_types for court ${verification.court_id} with single value:`, verification.new_value);
+          // Properly handle sport_types as array or NULL
+          console.log(`Updating sport_types for court ${verification.court_id} with value:`, verification.new_value);
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          // Database expects JSON array, so wrap single value in array
-          const sportTypesArray = verification.new_value ? [verification.new_value] : null;
-          updateValues = [JSON.stringify(sportTypesArray), verification.court_id];
+
+          let sportTypesArray = null;
+          if (verification.new_value && verification.new_value.trim() !== '') {
+            sportTypesArray = [verification.new_value.trim()];
+          }
+
+          updateValues = [sportTypesArray, verification.court_id];
         } else {
-          // Handle null values for required fields
+          // Handle defaults for required fields
           let value = verification.new_value;
-          
-          // Provide defaults for required fields that can't be null
           if (verification.field_name === 'address' && (!value || value.trim() === '')) {
             value = 'Address not available';
           } else if (verification.field_name === 'name' && (!value || value.trim() === '')) {
@@ -263,13 +267,13 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
           } else if (verification.field_name === 'surface_type' && (!value || value.trim() === '')) {
             value = 'Unknown';
           }
-          
+
           updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
           updateValues = [value, verification.court_id];
         }
-        
+
         await client.query(updateQuery, updateValues);
-        
+
         // Update verification count and last verified date
         await client.query(`
           UPDATE courts 
@@ -279,28 +283,27 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
           WHERE id = $1
         `, [verification.court_id]);
       }
-      
+
       await client.query('COMMIT');
-      
+
       res.json({
         message: `Verification ${action}d successfully`,
         courtName: verification.court_name,
         fieldName: verification.field_name,
         newValue: verification.new_value
       });
-      
-    } catch (error) {
+    } catch (err) {
       await client.query('ROLLBACK');
-      throw error;
+      throw err;
     } finally {
       client.release();
     }
-    
   } catch (error) {
     console.error('Error processing verification:', error);
     res.status(500).json({ error: 'Failed to process verification' });
   }
 });
+
 
 // Get verification statistics
 router.get('/stats', async (req, res) => {
