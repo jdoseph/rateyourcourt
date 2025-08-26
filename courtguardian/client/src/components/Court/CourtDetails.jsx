@@ -684,7 +684,32 @@ export default function CourtDetails({ courtId, user }) {
               <div className="court-stats-icon">🏆</div>
               <div className="court-stats-label">Sport Type</div>
               <div className="court-stats-value">
-                {court.sport_types || 'Not specified'}
+                {(() => {
+                  const sportTypes = court.sport_types;
+                  
+                  if (!sportTypes) return 'Not specified';
+                  
+                  // Handle sport_types JSON string format like {"tennis"} or ["tennis"]
+                  if (typeof sportTypes === 'string') {
+                    try {
+                      const parsed = JSON.parse(sportTypes);
+                      if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed[0];
+                      } else if (typeof parsed === 'string') {
+                        return parsed;
+                      }
+                    } catch (e) {
+                      // If JSON parsing fails, treat as regular string
+                      return sportTypes;
+                    }
+                  }
+                  
+                  if (Array.isArray(sportTypes) && sportTypes.length > 0) {
+                    return sportTypes[0];
+                  }
+                  
+                  return String(sportTypes);
+                })()}
               </div>
             </div>
 

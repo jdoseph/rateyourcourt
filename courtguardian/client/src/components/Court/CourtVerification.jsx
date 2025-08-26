@@ -132,7 +132,32 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
       case 'opening_hours': return court?.opening_hours;
       case 'address': return court?.address;
       case 'name': return court?.name;
-      case 'sport_types': return court?.sport_types;
+      case 'sport_types': {
+        const sportTypes = court?.sport_types;
+        
+        if (!sportTypes) return null;
+        
+        // Handle sport_types JSON string format like {"tennis"} or ["tennis"]
+        if (typeof sportTypes === 'string') {
+          try {
+            const parsed = JSON.parse(sportTypes);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return parsed[0];
+            } else if (typeof parsed === 'string') {
+              return parsed;
+            }
+          } catch (e) {
+            // If JSON parsing fails, treat as regular string
+            return sportTypes;
+          }
+        }
+        
+        if (Array.isArray(sportTypes) && sportTypes.length > 0) {
+          return sportTypes[0];
+        }
+        
+        return sportTypes;
+      }
       default: return null;
     }
   };
