@@ -120,7 +120,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
         }
       }
     } catch (error) {
-      console.error('Error submitting verification:', error);
+      console.error('Error submitting verification :', error);
       if (onShowToast) {
         onShowToast({ show: true, message: 'Failed to submit verification. Please try again.', type: 'error' });
       }
