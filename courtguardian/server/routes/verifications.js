@@ -195,7 +195,7 @@ router.patch('/admin/:verificationId', async (req, res) => {
   try {
     const { verificationId } = req.params;
     const verification = await pool.query(
-      'SELECT * FROM verifications WHERE id = $1',
+      'SELECT * FROM court_verifications WHERE id = $1',
       [verificationId]
     );
 
