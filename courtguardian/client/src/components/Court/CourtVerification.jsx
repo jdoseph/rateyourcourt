@@ -336,7 +336,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
                         {getFieldDisplayName(field)} (Current: {(() => {
                           const value = getFieldValue(field);
                           
-                          // Handle sport_types specifically - it might be stored as JSON string like {"tennis"}
+                          // Handle sport_types specifically - it might be stored as JSON string like {"tennis"} or ["tennis"]
                           if (field === 'sport_types' && typeof value === 'string') {
                             try {
                               const parsed = JSON.parse(value);
@@ -346,7 +346,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
                                 return parsed;
                               }
                             } catch (e) {
-                              // If JSON parsing fails, treat as regular string
+                              // If JSON parsing fails, might be a plain string already
                               return value;
                             }
                           }

@@ -1180,7 +1180,30 @@ export default function   AdminPanel({ user }) {
                             wordBreak: 'break-word',
                             overflowWrap: 'break-word'
                           }}>
-                            {verification.old_value || 'None (missing data)'}
+                            {(() => {
+                              const value = verification.old_value;
+                              
+                              // Handle sport_types JSON string format like {"tennis"} or ["tennis"]
+                              if (verification.field_name === 'sport_types' && typeof value === 'string') {
+                                try {
+                                  const parsed = JSON.parse(value);
+                                  if (Array.isArray(parsed) && parsed.length > 0) {
+                                    return parsed[0];
+                                  } else if (typeof parsed === 'string') {
+                                    return parsed;
+                                  }
+                                } catch (e) {
+                                  // If JSON parsing fails, treat as regular string
+                                  return value;
+                                }
+                              }
+                              
+                              if (Array.isArray(value)) {
+                                return value[0] || 'Empty array';
+                              }
+                              
+                              return value || 'None (missing data)';
+                            })()}
                           </div>
                         </div>
                       )}
