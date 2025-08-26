@@ -186,6 +186,43 @@ router.post('/submit', authenticateToken, async (req, res) => {
 });
 
 
+// Get pending verifications for admin review
+router.get('/admin/pending', authenticateToken, requireModerator, async (req, res) => {
+  try {
+    const pendingQuery = `
+      SELECT 
+        cv.id,
+        cv.court_id,
+        cv.field_name,
+        cv.current_value as old_value,
+        cv.proposed_value as new_value,
+        cv.evidence as notes,
+        cv.created_at,
+        cv.status,
+        u.username as contributor_name,
+        c.name as court_name,
+        c.address as court_address,
+        'correction' as verification_type
+      FROM court_verifications cv
+      LEFT JOIN users u ON cv.user_id = u.id
+      LEFT JOIN courts c ON cv.court_id = c.id
+      WHERE cv.status = 'pending'
+      ORDER BY cv.created_at ASC
+      LIMIT 50
+    `;
+    
+    const result = await pool.query(pendingQuery);
+    
+    res.json({
+      pendingVerifications: result.rows
+    });
+    
+  } catch (error) {
+    console.error('Error fetching pending verifications:', error);
+    res.status(500).json({ error: 'Failed to fetch pending verifications' });
+  }
+});
+
 // Approve or reject a verification (admin only)
 router.patch('/admin/:verificationId', authenticateToken, requireModerator, async (req, res) => {
   try {
@@ -232,18 +269,23 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
         // Field-specific handling
         switch (verification.field_name) {
           case 'court_count':
+            const courtCountValue = parseInt(verification.proposed_value);
+            if (isNaN(courtCountValue) || courtCountValue < 1) {
+              throw new Error(`Invalid court count value: ${verification.proposed_value}`);
+            }
             updateQuery = `UPDATE courts SET court_count = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-            updateValues = [parseInt(verification.new_value) || 0, verification.court_id];
+            updateValues = [courtCountValue, verification.court_id];
             break;
 
           case 'lighting':
             updateQuery = `UPDATE courts SET lighting = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-            updateValues = [verification.new_value === 'true' || verification.new_value === true, verification.court_id];
+            updateValues = [verification.proposed_value === 'true' || verification.proposed_value === true, verification.court_id];
             break;
 
           case 'opening_hours':
             try {
-              const parsedHours = JSON.parse(verification.new_value);
+              const parsedHours = typeof verification.proposed_value === 'string' ? 
+                JSON.parse(verification.proposed_value) : verification.proposed_value;
               updateQuery = `UPDATE courts SET opening_hours = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
               updateValues = [parsedHours, verification.court_id];
             } catch {
@@ -253,7 +295,7 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
 
           case 'sport_types':
             let sportTypesArray = [];
-            const newSportValue = verification.new_value || '';
+            const newSportValue = verification.proposed_value || '';
             if (newSportValue.trim() !== '') sportTypesArray = [newSportValue.trim()];
             updateQuery = `UPDATE courts SET sport_types = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
             updateValues = [sportTypesArray, verification.court_id];
@@ -261,7 +303,7 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
 
           default:
             // Other fields (address, name, surface_type, phone, website)
-            let value = verification.new_value;
+            let value = verification.proposed_value;
             if (!value || value.trim() === '') {
               if (verification.field_name === 'address') value = 'Address not available';
               else if (verification.field_name === 'name') value = 'Unnamed Court';
@@ -290,7 +332,7 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
         message: `Verification ${action}d successfully`,
         courtName: verification.court_name,
         fieldName: verification.field_name,
-        newValue: verification.new_value
+        newValue: verification.proposed_value
       });
 
     } catch (err) {
