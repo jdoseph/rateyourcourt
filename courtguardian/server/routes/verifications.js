@@ -228,7 +228,7 @@ router.patch('/admin/:verificationId', async (req, res) => {
 
     // Mark verification as reviewed/approved/etc.
     await pool.query(
-      `UPDATE verifications SET status = 'approved', reviewed_at = NOW() WHERE id = $1`,
+      `UPDATE court_verifications SET status = 'approved', reviewed_at = NOW() WHERE id = $1`,
       [verificationId]
     );
 
