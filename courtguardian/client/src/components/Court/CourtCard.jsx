@@ -29,7 +29,39 @@ export default function CourtCard({ court, showRating = true, showReviews = fals
       </div>
       
       <div className="court-card-sport">
-        <span>{court.sport_types || 'Sports Court'}</span>
+        <span>{(() => {
+          const sportTypes = court.sport_types;
+          
+          if (!sportTypes) return 'Sports Court';
+          
+          // Handle all possible formats recursively
+          const parseSportTypes = (value) => {
+            // If it's already a clean string, return it
+            if (typeof value === 'string' && !value.startsWith('{') && !value.startsWith('[')) {
+              return value;
+            }
+            
+            // If it's an array, get the first element
+            if (Array.isArray(value) && value.length > 0) {
+              return parseSportTypes(value[0]);
+            }
+            
+            // If it's a JSON string, parse it
+            if (typeof value === 'string') {
+              try {
+                const parsed = JSON.parse(value);
+                return parseSportTypes(parsed);
+              } catch (e) {
+                // Remove curly braces manually if JSON parsing failed
+                return value.replace(/^[{\["]*|[}\]"]*$/g, '');
+              }
+            }
+            
+            return String(value);
+          };
+          
+          return parseSportTypes(sportTypes);
+        })()}</span>
       </div>
       
       <div className="court-card-footer">

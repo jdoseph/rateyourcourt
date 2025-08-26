@@ -1183,19 +1183,26 @@ export default function   AdminPanel({ user }) {
                             {(() => {
                               const value = verification.old_value;
                               
-                              // Handle sport_types JSON string format like {"tennis"} or ["tennis"]
-                              if (verification.field_name === 'sport_types' && typeof value === 'string') {
-                                try {
-                                  const parsed = JSON.parse(value);
-                                  if (Array.isArray(parsed) && parsed.length > 0) {
-                                    return parsed[0];
-                                  } else if (typeof parsed === 'string') {
-                                    return parsed;
+                              // Handle sport_types with robust parsing
+                              if (verification.field_name === 'sport_types') {
+                                const parseSportTypes = (val) => {
+                                  if (typeof val === 'string' && !val.startsWith('{') && !val.startsWith('[')) {
+                                    return val;
                                   }
-                                } catch (e) {
-                                  // If JSON parsing fails, treat as regular string
-                                  return value;
-                                }
+                                  if (Array.isArray(val) && val.length > 0) {
+                                    return parseSportTypes(val[0]);
+                                  }
+                                  if (typeof val === 'string') {
+                                    try {
+                                      const parsed = JSON.parse(val);
+                                      return parseSportTypes(parsed);
+                                    } catch (e) {
+                                      return val.replace(/^[{\["]*|[}\]"]*$/g, '');
+                                    }
+                                  }
+                                  return String(val);
+                                };
+                                return parseSportTypes(value);
                               }
                               
                               if (Array.isArray(value)) {
@@ -1220,19 +1227,26 @@ export default function   AdminPanel({ user }) {
                           {(() => {
                             const value = verification.new_value;
                             
-                            // Handle sport_types JSON string format like {"tennis"}
-                            if (verification.field_name === 'sport_types' && typeof value === 'string') {
-                              try {
-                                const parsed = JSON.parse(value);
-                                if (Array.isArray(parsed) && parsed.length > 0) {
-                                  return parsed[0];
-                                } else if (typeof parsed === 'string') {
-                                  return parsed;
+                            // Handle sport_types with robust parsing
+                            if (verification.field_name === 'sport_types') {
+                              const parseSportTypes = (val) => {
+                                if (typeof val === 'string' && !val.startsWith('{') && !val.startsWith('[')) {
+                                  return val;
                                 }
-                              } catch (e) {
-                                // If JSON parsing fails, treat as regular string
-                                return value;
-                              }
+                                if (Array.isArray(val) && val.length > 0) {
+                                  return parseSportTypes(val[0]);
+                                }
+                                if (typeof val === 'string') {
+                                  try {
+                                    const parsed = JSON.parse(val);
+                                    return parseSportTypes(parsed);
+                                  } catch (e) {
+                                    return val.replace(/^[{\["]*|[}\]"]*$/g, '');
+                                  }
+                                }
+                                return String(val);
+                              };
+                              return parseSportTypes(value);
                             }
                             
                             if (Array.isArray(value)) {

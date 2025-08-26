@@ -137,26 +137,33 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
         
         if (!sportTypes) return null;
         
-        // Handle sport_types JSON string format like {"tennis"} or ["tennis"]
-        if (typeof sportTypes === 'string') {
-          try {
-            const parsed = JSON.parse(sportTypes);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              return parsed[0];
-            } else if (typeof parsed === 'string') {
-              return parsed;
-            }
-          } catch (e) {
-            // If JSON parsing fails, treat as regular string
-            return sportTypes;
+        // Handle all possible formats recursively
+        const parseSportTypes = (value) => {
+          // If it's already a clean string, return it
+          if (typeof value === 'string' && !value.startsWith('{') && !value.startsWith('[')) {
+            return value;
           }
-        }
+          
+          // If it's an array, get the first element
+          if (Array.isArray(value) && value.length > 0) {
+            return parseSportTypes(value[0]);
+          }
+          
+          // If it's a JSON string, parse it
+          if (typeof value === 'string') {
+            try {
+              const parsed = JSON.parse(value);
+              return parseSportTypes(parsed);
+            } catch (e) {
+              // Remove curly braces manually if JSON parsing failed
+              return value.replace(/^[{\["]*|[}\]"]*$/g, '');
+            }
+          }
+          
+          return String(value);
+        };
         
-        if (Array.isArray(sportTypes) && sportTypes.length > 0) {
-          return sportTypes[0];
-        }
-        
-        return sportTypes;
+        return parseSportTypes(sportTypes);
       }
       default: return null;
     }
