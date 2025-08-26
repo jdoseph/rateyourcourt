@@ -191,118 +191,54 @@ router.get('/admin/pending', authenticateToken, requireModerator, async (req, re
 
 // Approve or reject a verification (admin only)
 // Approve or reject a verification (admin only)
-router.patch('/admin/:verificationId', authenticateToken, requireModerator, async (req, res) => {
+router.patch('/admin/:verificationId', async (req, res) => {
   try {
-    // Clean and validate ID
-    let verificationId = req.params.verificationId.replace(/^:/, '').trim();
-    const uuidRegex = /^[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12}$/;
-    if (!uuidRegex.test(verificationId)) {
-      return res.status(400).json({ error: 'Invalid verification ID format' });
+    const { verificationId } = req.params;
+    const verification = await pool.query(
+      'SELECT * FROM verifications WHERE id = $1',
+      [verificationId]
+    );
+
+    if (!verification.rows.length) {
+      return res.status(404).json({ error: 'Verification not found' });
     }
 
-    const { action, adminNotes } = req.body; // 'approve' or 'reject'
-    if (!['approve', 'reject'].includes(action)) {
-      return res.status(400).json({ error: 'Action must be "approve" or "reject"' });
-    }
+    const v = verification.rows[0];
+    let updateQuery = '';
+    let updateValues = [];
 
-    // Get verification details
-    const verificationQuery = `
-      SELECT cv.*, c.name as court_name
-      FROM court_verifications cv
-      JOIN courts c ON cv.court_id = c.id
-      WHERE cv.id = $1 AND cv.status = 'pending'
-    `;
-    const verificationResult = await pool.query(verificationQuery, [verificationId]);
+    if (v.field_name === 'sport_types') {
+      console.log(`Updating sport_types for court ${v.court_id} with value:`, v.new_value);
+      updateQuery = `UPDATE courts SET ${v.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
 
-    if (verificationResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Verification not found or already processed' });
-    }
-
-    const verification = verificationResult.rows[0];
-    const client = await pool.connect();
-
-    try {
-      await client.query('BEGIN');
-
-      // Update verification status
-      const newStatus = action === 'approve' ? 'approved' : 'rejected';
-      await client.query(`
-        UPDATE court_verifications 
-        SET status = $1, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = $2, notes = COALESCE($3, notes)
-        WHERE id = $4
-      `, [newStatus, req.user.id, adminNotes, verificationId]);
-
-      // If approved, update the court record
-      if (action === 'approve') {
-        let updateQuery;
-        let updateValues;
-
-        if (verification.field_name === 'court_count') {
-          updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          updateValues = [parseInt(verification.new_value), verification.court_id];
-        } else if (verification.field_name === 'lighting') {
-          updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          updateValues = [verification.new_value === 'true' || verification.new_value === true, verification.court_id];
-        } else if (verification.field_name === 'opening_hours') {
-          updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          updateValues = [JSON.parse(verification.new_value), verification.court_id];
-        } else if (verification.field_name === 'sport_types') {
-          // Properly handle sport_types as array or NULL
-          console.log(`Updating sport_types for court ${verification.court_id} with value:`, verification.new_value);
-          updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-
-          let sportTypesArray = null;
-          if (verification.new_value && verification.new_value.trim() !== '') {
-            sportTypesArray = [verification.new_value.trim()];
-          }
-
-          updateValues = [sportTypesArray, verification.court_id];
-        } else {
-          // Handle defaults for required fields
-          let value = verification.new_value;
-          if (verification.field_name === 'address' && (!value || value.trim() === '')) {
-            value = 'Address not available';
-          } else if (verification.field_name === 'name' && (!value || value.trim() === '')) {
-            value = 'Unnamed Court';
-          } else if (verification.field_name === 'surface_type' && (!value || value.trim() === '')) {
-            value = 'Unknown';
-          }
-
-          updateQuery = `UPDATE courts SET ${verification.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-          updateValues = [value, verification.court_id];
-        }
-
-        await client.query(updateQuery, updateValues);
-
-        // Update verification count and last verified date
-        await client.query(`
-          UPDATE courts 
-          SET verification_count = verification_count + 1, 
-              last_verified_at = CURRENT_TIMESTAMP,
-              verification_status = 'verified'
-          WHERE id = $1
-        `, [verification.court_id]);
+      // Always send an array (empty if no value)
+      let sportTypesArray = [];
+      if (v.new_value && v.new_value.trim() !== '') {
+        sportTypesArray = [v.new_value.trim()];
       }
 
-      await client.query('COMMIT');
-
-      res.json({
-        message: `Verification ${action}d successfully`,
-        courtName: verification.court_name,
-        fieldName: verification.field_name,
-        newValue: verification.new_value
-      });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+      updateValues = [sportTypesArray, v.court_id];
+    } else {
+      // Handle other fields as normal
+      updateQuery = `UPDATE courts SET ${v.field_name} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
+      updateValues = [v.new_value, v.court_id];
     }
+
+    await pool.query(updateQuery, updateValues);
+
+    // Mark verification as reviewed/approved/etc.
+    await pool.query(
+      `UPDATE verifications SET status = 'approved', reviewed_at = NOW() WHERE id = $1`,
+      [verificationId]
+    );
+
+    return res.status(200).json({ message: 'Verification processed successfully' });
   } catch (error) {
     console.error('Error processing verification:', error);
-    res.status(500).json({ error: 'Failed to process verification' });
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 // Get verification statistics
