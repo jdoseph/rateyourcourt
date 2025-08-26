@@ -154,7 +154,7 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
       'opening_hours': 'Opening Hours',
       'address': 'Address',
       'name': 'Court Name',
-      'sport_types': 'Sport Types'
+      'sport_types': 'Sport Type'
     };
     return names[fieldName] || fieldName;
   };
@@ -333,7 +333,34 @@ export default function CourtVerification({ courtId, court, onVerificationSubmit
                     .filter(field => !missingFields.includes(field))
                     .map(field => (
                       <option key={field} value={field}>
-                        {getFieldDisplayName(field)} (Current: {String(getFieldValue(field))})
+                        {getFieldDisplayName(field)} (Current: {(() => {
+                          const value = getFieldValue(field);
+                          
+                          // Handle sport_types specifically - it might be stored as JSON string like {"tennis"}
+                          if (field === 'sport_types' && typeof value === 'string') {
+                            try {
+                              const parsed = JSON.parse(value);
+                              if (Array.isArray(parsed) && parsed.length > 0) {
+                                return parsed[0];
+                              } else if (typeof parsed === 'string') {
+                                return parsed;
+                              }
+                            } catch (e) {
+                              // If JSON parsing fails, treat as regular string
+                              return value;
+                            }
+                          }
+                          
+                          if (Array.isArray(value) && value.length > 0) {
+                            return value[0];
+                          } else if (Array.isArray(value)) {
+                            return 'Empty array';
+                          } else if (value === null || value === undefined) {
+                            return 'None';
+                          } else {
+                            return String(value);
+                          }
+                        })()})
                       </option>
                     ))}
                 </optgroup>

@@ -136,11 +136,11 @@ router.post('/submit', authenticateToken, async (req, res) => {
     let sanitizedNewValue = newValue;
 
     if (fieldName === 'sport_types') {
-      // Always an array, never null
+      // Store as a single string value, not array, to avoid JSON formatting issues
       if (!sanitizedNewValue || sanitizedNewValue.trim() === '') {
-        sanitizedNewValue = ['Unknown'];
+        sanitizedNewValue = 'Unknown';
       } else {
-        sanitizedNewValue = [sanitizedNewValue.trim()];
+        sanitizedNewValue = sanitizedNewValue.trim();
       }
     } else if (fieldName === 'opening_hours') {
       // Ensure valid JSON
@@ -294,11 +294,11 @@ router.patch('/admin/:verificationId', authenticateToken, requireModerator, asyn
             break;
 
           case 'sport_types':
-            let sportTypesArray = [];
+            // Store as a single string value, not array, to avoid JSON formatting issues
             const newSportValue = verification.proposed_value || '';
-            if (newSportValue.trim() !== '') sportTypesArray = [newSportValue.trim()];
+            const sportValue = newSportValue.trim() !== '' ? newSportValue.trim() : 'Unknown';
             updateQuery = `UPDATE courts SET sport_types = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
-            updateValues = [sportTypesArray, verification.court_id];
+            updateValues = [sportValue, verification.court_id];
             break;
 
           default:
