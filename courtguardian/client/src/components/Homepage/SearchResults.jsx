@@ -518,12 +518,44 @@ export default function SearchResults() {
             
             // Split query into words and check each one
             const queryWords = queryLower.split(/\s+/);
-            return queryWords.every(word => 
-              name.includes(word) || 
-              address.includes(word) ||
-              (court.sport_types && Array.isArray(court.sport_types) && 
-               court.sport_types.some(sport => sport.toLowerCase().includes(word)))
-            );
+            return queryWords.every(word => {
+              // Check name and address
+              if (name.includes(word) || address.includes(word)) {
+                return true;
+              }
+              
+              // Check sport_types with robust parsing
+              if (court.sport_types) {
+                try {
+                  const parseSportTypes = (value) => {
+                    if (typeof value === 'string' && !value.startsWith('{') && !value.startsWith('[')) {
+                      return [value];
+                    }
+                    if (Array.isArray(value) && value.length > 0) {
+                      return [parseSportTypes(value[0])[0]];
+                    }
+                    if (typeof value === 'string') {
+                      try {
+                        const parsed = JSON.parse(value);
+                        return parseSportTypes(parsed);
+                      } catch (e) {
+                        return [value.replace(/^[{\["]*|[}\]"]*$/g, '')];
+                      }
+                    }
+                    return [String(value)];
+                  };
+                  
+                  const sportTypes = parseSportTypes(court.sport_types);
+                  return sportTypes.some(sport => sport.toLowerCase().includes(word));
+                } catch (e) {
+                  // Fallback to string conversion if parsing fails
+                  const sportStr = String(court.sport_types).toLowerCase();
+                  return sportStr.includes(word);
+                }
+              }
+              
+              return false;
+            });
           });
         }
       }

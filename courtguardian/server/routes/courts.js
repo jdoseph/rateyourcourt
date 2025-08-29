@@ -162,11 +162,18 @@ router.get('/', async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // Sport type filter
+    // Sport type filter - handle both array and string formats
     if (sport_type) {
-      whereConditions.push(`c.sport_types = $${paramIndex}`);
+      whereConditions.push(`(
+        c.sport_type = $${paramIndex} OR
+        EXISTS (
+          SELECT 1 FROM unnest(c.sport_types) AS st WHERE st = $${paramIndex}
+        ) OR
+        c.sport_types::text LIKE $${paramIndex + 1}
+      )`);
       params.push(sport_type);
-      paramIndex++;
+      params.push(`%${sport_type}%`);
+      paramIndex += 2;
     }
 
     // Search term filter (using same logic as search endpoint)
@@ -192,7 +199,13 @@ router.get('/', async (req, res) => {
     const groupOrder = `GROUP BY c.id ORDER BY c.name LIMIT ${parseInt(limit)}`;
 
     const fullQuery = [baseSql, whereClause, groupOrder].join(' ');
-    // console.log('Executing courts query:', fullQuery, 'with params:', params);
+    console.log('=== DEBUG COURTS QUERY ===');
+    console.log('sport_type param:', sport_type);
+    console.log('searchTerm param:', searchTerm);
+    console.log('Full query:', fullQuery);
+    console.log('Query params:', JSON.stringify(params));
+    console.log('Param types:', params.map(p => typeof p));
+    console.log('==========================');
     const result = await pool.query(fullQuery, params);
     const executionTime = Date.now() - startTime;
     // console.log(`Courts query completed in ${executionTime}ms, returned ${result.rows.length} rows`);
@@ -277,10 +290,17 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     let paramIndex = 4;
     
     if (sportType && ALLOWED_SPORTS.includes(sportType)) {
-      // Use sport_types as single value
-      query += ` AND sport_types = $${paramIndex}`;
+      // Handle both array and string formats for sport_types
+      query += ` AND (
+        sport_type = $${paramIndex} OR
+        EXISTS (
+          SELECT 1 FROM unnest(sport_types) AS st WHERE st = $${paramIndex}
+        ) OR
+        sport_types::text LIKE $${paramIndex + 1}
+      )`;
       params.push(sportType);
-      paramIndex++;
+      params.push(`%${sportType}%`);
+      paramIndex += 2;
     }
     
     if (searchTerm) {
@@ -303,6 +323,13 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     
     query += ' ORDER BY distance LIMIT 50';
     
+    console.log('=== DEBUG SEARCH QUERY ===');
+    console.log('sportType param:', sportType);
+    console.log('searchTerm param:', searchTerm);
+    console.log('Full query:', query);
+    console.log('Query params:', JSON.stringify(params));
+    console.log('Param types:', params.map(p => typeof p));
+    console.log('==========================');
     const result = await client.query(query, params);
     return result.rows;
   } finally {
