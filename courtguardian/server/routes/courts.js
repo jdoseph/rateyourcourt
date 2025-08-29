@@ -144,6 +144,61 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// GET /api/courts/count?sport_type=pickleball&searchTerm=text (get total count)
+router.get('/count', async (req, res) => {
+  try {
+    const { sport_type, searchTerm } = req.query;
+
+    const baseSql = `SELECT COUNT(DISTINCT c.id) as total_count FROM courts c`;
+
+    let whereConditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    // Sport type filter - handle both array and string formats
+    if (sport_type) {
+      whereConditions.push(`(
+        c.sport_type = $${paramIndex} OR
+        EXISTS (
+          SELECT 1 FROM unnest(c.sport_types) AS st WHERE st = $${paramIndex}
+        ) OR
+        c.sport_types::text LIKE $${paramIndex + 1}
+      )`);
+      params.push(sport_type);
+      params.push(`%${sport_type}%`);
+      paramIndex += 2;
+    }
+
+    // Search term filter (using same logic as search endpoint)
+    if (searchTerm) {
+      const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+      if (searchWords.length > 0) {
+        const searchConditions = searchWords.map((word, index) => {
+          const paramNum = paramIndex + index;
+          return `(LOWER(c.name) LIKE LOWER($${paramNum}) OR LOWER(c.address) LIKE LOWER($${paramNum}))`;
+        }).join(' AND ');
+        
+        whereConditions.push(`(${searchConditions})`);
+        
+        // Add each word as a parameter with wildcards
+        searchWords.forEach(word => {
+          params.push(`%${word}%`);
+        });
+        paramIndex += searchWords.length;
+      }
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    const fullQuery = [baseSql, whereClause].join(' ');
+    
+    const result = await pool.query(fullQuery, params);
+    res.json({ total_count: parseInt(result.rows[0].total_count) });
+  } catch (err) {
+    console.error('GET /api/courts/count error:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+});
+
 // GET /api/courts?sport_type=pickleball&searchTerm=text (supports search)
 router.get('/', async (req, res) => {
   const startTime = Date.now();

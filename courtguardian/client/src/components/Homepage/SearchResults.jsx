@@ -425,7 +425,7 @@ export default function SearchResults() {
           
           // If we're showing limited results, fetch total count
           if (!showAllCourts) {
-            const countUrl = `${API_BASE_URL}/courts`;
+            const countUrl = `${API_BASE_URL}/courts/count`;
             const countParams = new URLSearchParams();
             
             if (sport && sport !== 'All Sports') {
@@ -436,13 +436,11 @@ export default function SearchResults() {
               countParams.append('searchTerm', query.trim());
             }
             
-            countParams.append('limit', '1000'); // Get all to count
-            
             try {
               const countRes = await fetch(countUrl + '?' + countParams.toString());
               if (countRes.ok) {
                 const countData = await countRes.json();
-                setTotalCourtsCount(Array.isArray(countData) ? countData.length : 0);
+                setTotalCourtsCount(countData.total_count || 0);
               }
             } catch (countError) {
               console.error('Error fetching total count:', countError);
