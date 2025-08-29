@@ -199,13 +199,6 @@ router.get('/', async (req, res) => {
     const groupOrder = `GROUP BY c.id ORDER BY c.name LIMIT ${parseInt(limit)}`;
 
     const fullQuery = [baseSql, whereClause, groupOrder].join(' ');
-    console.log('=== DEBUG COURTS QUERY ===');
-    console.log('sport_type param:', sport_type);
-    console.log('searchTerm param:', searchTerm);
-    console.log('Full query:', fullQuery);
-    console.log('Query params:', JSON.stringify(params));
-    console.log('Param types:', params.map(p => typeof p));
-    console.log('==========================');
     const result = await pool.query(fullQuery, params);
     const executionTime = Date.now() - startTime;
     // console.log(`Courts query completed in ${executionTime}ms, returned ${result.rows.length} rows`);
@@ -323,13 +316,6 @@ async function searchExistingCourts(latitude, longitude, radius, sportType, sear
     
     query += ' ORDER BY distance LIMIT 50';
     
-    console.log('=== DEBUG SEARCH QUERY ===');
-    console.log('sportType param:', sportType);
-    console.log('searchTerm param:', searchTerm);
-    console.log('Full query:', query);
-    console.log('Query params:', JSON.stringify(params));
-    console.log('Param types:', params.map(p => typeof p));
-    console.log('==========================');
     const result = await client.query(query, params);
     return result.rows;
   } finally {
